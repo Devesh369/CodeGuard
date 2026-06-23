@@ -1,3 +1,4 @@
+
 {% load static %}
 
 <!DOCTYPE html>
@@ -32,29 +33,31 @@
 
     <ul>
 
-        <li>
-            <a href="#">Dashboard</a>
-        </li>
+<li>
+<a href="{% url 'dashboard' %}">
+🏠 Dashboard
+</a>
+</li>
 
-        <li>
-            <a href="#">Upload Code</a>
-        </li>
+<li>
+<a href="{% url 'upload_file' %}">
+📤 Upload Code
+</a>
+</li>
 
-        <li>
-            <a href="#">Reports</a>
-        </li>
+<li>
+<a href="{% url 'my_files' %}">
+📂 My Files
+</a>
+</li>
 
-        <li>
-            <a href="#">Security</a>
-        </li>
+<li>
+<a href="#">
+🧾 Reports
+</a>
+</li>
 
-        <li>
-            <a href="{% url 'logout' %}">
-                Logout
-            </a>
-        </li>
-
-    </ul>
+</ul>
 
 </div>
 
@@ -62,9 +65,27 @@
 
     <div class="topbar">
 
-        <h3>Welcome {{ request.user.username }}</h3>
+    <div class="user-greeting">
+
+    Welcome back,
+
+    <span class="username">
+
+        {{ request.user.username|title }}
+
+    </span>
 
     </div>
+
+    <a
+       href="{% url 'logout' %}"
+       class="logout-btn">
+
+        Logout
+
+    </a>
+
+</div>
 
     {% block content %}
     {% endblock %}

@@ -1,24 +1,131 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html>
+
+<head>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+
+<title>Login | CodeGuard</title>
+
+    <link rel="stylesheet"
+          href="{% static 'css/auth.css' %}">
+
+</head>
+
+
 <body>
 
-<h2>Login</h2>
+<div class="auth-container">
 
-<form method="POST">
+    <div class="auth-card">
 
-    {% csrf_token %}
+        <div class="logo">
 
-    {{ form.as_p }}
+            <h1>🛡 CodeGuard</h1>
 
-    <button type="submit">
-        Login
-    </button>
+            <p>
+                AI Code Security Platform
+            </p>
 
-</form>
+        </div>
 
-<a href="{% url 'register' %}">
-    Register
-</a>
+        <form method="POST">
+
+            {% csrf_token %}
+
+            <div class="form-group">
+
+                <label>
+                    Username
+                </label>
+
+                {{ form.username }}
+
+            </div>
+
+          <div class="form-group">
+
+    <label>Password</label>
+
+    <div class="password-wrapper">
+
+        {{ form.password }}
+
+        <i
+        class="fa-solid fa-eye toggle-password"
+        id="togglePassword">
+        </i>
+
+    </div>
+
+</div>
+
+            <button
+                class="auth-btn"
+                type="submit">
+
+                Login
+
+            </button>
+
+        </form>
+
+        <div class="auth-footer">
+
+            Don't have an account?
+
+            <a href="{% url 'register' %}">
+                Register
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+const togglePassword =
+document.getElementById(
+"togglePassword"
+);
+
+const passwordField =
+document.getElementById(
+"id_password"
+);
+
+togglePassword.addEventListener(
+"click",
+function(){
+
+    const type =
+    passwordField.getAttribute(
+    "type"
+    ) === "password"
+    ? "text"
+    : "password";
+
+    passwordField.setAttribute(
+    "type",
+    type
+    );
+
+    this.classList.toggle(
+    "fa-eye-slash"
+    );
+
+});
+
+</script>
+
+
+
 
 </body>
 </html>

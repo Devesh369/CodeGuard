@@ -1,0 +1,146 @@
+{% extends 'accounts/base.html' %}
+
+{% block content %}
+
+{% if messages %}
+{% for message in messages %} <div class="alert {{ message.tags }}">
+{{ message }} </div>
+{% endfor %}
+{% endif %}
+
+<div class="upload-page">
+
+
+<h1>Upload Source Code</h1>
+
+<form method="POST"
+      enctype="multipart/form-data"
+      id="uploadForm">
+
+    {% csrf_token %}
+
+    {% if form.errors %}
+        <div class="alert error">
+
+            {% for field in form %}
+                {% for error in field.errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            {% endfor %}
+
+        </div>
+    {% endif %}
+
+    <div id="dropZone">
+
+        <i class="fa-solid fa-cloud-arrow-up"></i>
+
+        <h3>Drag & Drop File Here</h3>
+
+        <p>or click to browse</p>
+
+        {{ form.file }}
+
+    </div>
+
+    <div id="fileName"></div>
+
+    <br>
+
+    <button type="submit"
+            class="btn btn-primary">
+
+        Upload File
+
+    </button>
+
+</form>
+
+
+</div>
+
+<script>
+
+document.addEventListener(
+"DOMContentLoaded",
+function(){
+
+    const dropZone =
+    document.getElementById(
+    "dropZone"
+    );
+
+    const fileInput =
+    document.querySelector(
+    'input[type="file"]'
+    );
+
+    const fileName =
+    document.getElementById(
+    "fileName"
+    );
+
+    if(!dropZone || !fileInput){
+        return;
+    }
+
+    dropZone.addEventListener(
+    "click",
+    ()=>{
+        fileInput.click();
+    });
+
+    fileInput.addEventListener(
+    "change",
+    ()=>{
+        if(fileInput.files.length){
+
+            fileName.innerHTML =
+            "📄 " +
+            fileInput.files[0].name;
+        }
+    });
+
+    dropZone.addEventListener(
+    "dragover",
+    (e)=>{
+
+        e.preventDefault();
+
+        dropZone.classList.add(
+        "dragover"
+        );
+    });
+
+    dropZone.addEventListener(
+    "dragleave",
+    ()=>{
+
+        dropZone.classList.remove(
+        "dragover"
+        );
+    });
+
+    dropZone.addEventListener(
+    "drop",
+    (e)=>{
+
+        e.preventDefault();
+
+        dropZone.classList.remove(
+        "dragover"
+        );
+
+        fileInput.files =
+        e.dataTransfer.files;
+
+        fileName.innerHTML =
+        "📄 " +
+        e.dataTransfer.files[0].name;
+    });
+
+});
+
+</script>
+
+{% endblock %}

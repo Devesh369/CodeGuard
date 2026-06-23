@@ -1,0 +1,51 @@
+{% extends 'accounts/base.html' %}
+
+{% block content %}
+
+<h1>
+    My Uploaded Files
+</h1>
+
+<table>
+
+    <thead>
+
+    <tr>
+
+        <th>File</th>
+        <th>Status</th>
+        <th>Uploaded</th>
+
+    </tr>
+
+    </thead>
+
+    <tbody>
+
+    {% for file in files %}
+
+    <tr>
+
+        <td>
+            {{ file.file.name }}
+        </td>
+
+        <td>
+            <span class="badge warning">
+                {{ file.status }}
+            </span>
+        </td>
+
+        <td>
+            {{ file.uploaded_At }}
+        </td>
+
+    </tr>
+
+    {% endfor %}
+
+    </tbody>
+
+</table>
+
+{% endblock %}
