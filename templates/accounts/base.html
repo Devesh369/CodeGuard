@@ -1,0 +1,75 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>CodeGuard</title>
+
+    <link rel="stylesheet"
+          href="{% static 'css/style.css' %}">
+
+</head>
+
+<body>
+
+<div class="sidebar">
+
+    <div class="logo">
+
+        <h2>
+    🛡 CodeGuard
+</h2>
+
+<p style="color:#cbd5e1;font-size:13px;">
+    AI Code Security Platform
+</p>
+
+    </div>
+
+    <ul>
+
+        <li>
+            <a href="#">Dashboard</a>
+        </li>
+
+        <li>
+            <a href="#">Upload Code</a>
+        </li>
+
+        <li>
+            <a href="#">Reports</a>
+        </li>
+
+        <li>
+            <a href="#">Security</a>
+        </li>
+
+        <li>
+            <a href="{% url 'logout' %}">
+                Logout
+            </a>
+        </li>
+
+    </ul>
+
+</div>
+
+<div class="main-content">
+
+    <div class="topbar">
+
+        <h3>Welcome {{ request.user.username }}</h3>
+
+    </div>
+
+    {% block content %}
+    {% endblock %}
+
+</div>
+
+</body>
+</html>

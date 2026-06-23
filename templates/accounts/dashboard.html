@@ -1,0 +1,96 @@
+{% extends "accounts/base.html" %}
+
+{% block content %}
+
+<div class="dashboard">
+
+    <h1>
+        Code Analysis Dashboard
+    </h1>
+
+    <div class="cards">
+
+        <div class="card">
+
+            <h3>Total Uploads</h3>
+
+            <p>0</p>
+
+        </div>
+
+        <div class="card">
+
+            <h3>Security Score</h3>
+
+            <p>
+                95%
+            </p><br>
+
+            <span class="badge success">
+                Excellent
+            </span>
+
+        </div>
+
+        <div class="card">
+
+            <h3>Code Quality</h3>
+
+            <p>89%</p>
+
+        </div>
+
+        <div class="card">
+
+            <h3>Issues Found</h3>
+
+            <p>12</p><br>
+            <span class="badge danger">
+                Critical
+            </span>
+            
+        </div>
+
+    </div>
+
+    <div class="recent-section">
+
+        <h2>
+            Recent Analysis
+        </h2>
+
+        <table>
+
+            <thead>
+
+            <tr>
+                <th>File</th>
+                <th>Status</th>
+                <th>Score</th>
+            </tr>
+
+            </thead>
+
+            <tbody>
+
+            <tr>
+                <td>sample.py</td>
+                <td>Completed</td>
+                <td>9.2</td>
+            </tr>
+
+            <tr>
+                <td>app.py</td>
+                <td>Completed</td>
+                <td>8.7</td>
+            </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+{% endblock %}
