@@ -1,0 +1,97 @@
+
+
+{% extends "accounts/base.html" %}
+
+
+
+{% block content %}
+<div class="report-header-card">
+
+    <div class="file-info">
+
+        <h2>
+            📄 {{ report.uploaded_file.file.name|cut:"uploads/" }}
+        </h2>
+
+        <p>
+            Analyzed on:
+            {{ report.analyzed_at }}
+        </p>
+
+    </div>
+
+</div>
+<h1>🧾 Analysis Report 🧾 </h1>
+
+<div class="report-cards">
+
+    <div class="report-card">
+        <h3>Code Quality Score</h3>
+        <div class="score">
+            {{ report.pylint_score }}/10
+        </div>
+        <div class="progress">
+            <div
+            class="progress-fill"
+            style="width: {% widthratio report.pylint_score 10 100 %}%;">
+        </div>
+        </div>
+        <p class="score-text">
+    {% widthratio report.pylint_score 10 100 %}% Quality Score
+</p>
+    </div>
+
+    <div class="report-card">
+        <h3>Issues Found</h3>
+        <div class="score">
+            {{ report.issue_count }}
+        </div>
+    </div>
+
+</div>
+
+<div class="quality-badge
+{% if report.quality_status == 'Excellent' %}
+excellent
+{% elif report.quality_status == 'Good' %}
+good
+{% elif report.quality_status == 'Needs Improvement' %}
+warning
+{% else %}
+danger
+{% endif %}
+">
+    {{ report.quality_status }}
+</div>
+
+
+
+<div class="report-card">
+
+    <h3>
+        Recommendations
+    </h3>
+
+    <pre>
+{{ report.recommendations }}
+    </pre>
+
+</div>
+<div class="report-card">
+
+    <details>
+
+        <summary>
+            View Full Pylint Report
+        </summary>
+
+       
+             <pre>{{ report.pylint_report }} </pre>
+       
+
+    </details>
+
+</div>
+
+
+{% endblock %}

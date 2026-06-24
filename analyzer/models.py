@@ -17,3 +17,16 @@ class UploadedFile(models.Model):
     def __str__(self):
         return self.file.name
     
+    
+    
+class AnalysisReport(models.Model):
+    uploaded_file = models.OneToOneField(UploadedFile, on_delete=models.CASCADE)
+    pylint_score = models.CharField(max_length=10)
+    pylint_report = models.TextField()
+    analyzed_at = models.DateTimeField(auto_now_add=True)
+    issue_count = models.IntegerField(default=0)
+    quality_status = models.CharField(max_length=30,default="Unknown")
+    recommendations = models.TextField(blank=True)
+    
+    def __str__(self):
+        return (f"Report -" f"{self.uploaded_file.file.name}")

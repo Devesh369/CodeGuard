@@ -516,3 +516,155 @@ tr:hover {
 
     border: 1px solid #fca5a5;
 }
+
+.report-container {
+    max-width: 1200px;
+}
+
+.report-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin: 30px 0;
+}
+
+.report-card {
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .08);
+}
+
+.score {
+    font-size: 42px;
+    font-weight: 700;
+    color: #1e3a8a;
+}
+
+.report-status {
+    margin-bottom: 25px;
+}
+
+.badge.success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.badge.warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.badge.danger {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+details {
+    cursor: pointer;
+}
+
+summary {
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.upload-icon {
+    font-size: 60px;
+    color: #1e3a8a;
+    margin-bottom: 15px;
+}
+
+.progress {
+
+    width: 100%;
+
+    height: 12px;
+
+    background: #e5e7eb;
+
+    border-radius: 20px;
+
+    margin-top: 15px;
+
+    overflow: hidden;
+}
+
+.progress-fill {
+
+    height: 100%;
+
+    background: linear-gradient(90deg,
+            #2563eb,
+            #3b82f6);
+
+    border-radius: 20px;
+
+    transition: 0.5s;
+}
+
+.score-text {
+
+    margin-top: 10px;
+
+    color: #64748b;
+
+    font-size: 14px;
+}
+
+.quality-badge {
+    display: inline-block;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+.excellent {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.good {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.danger {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.report-header-card {
+
+    background: white;
+
+    padding: 25px;
+
+    border-radius: 20px;
+
+    margin-bottom: 25px;
+
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.file-info h2 {
+
+    margin-bottom: 10px;
+
+    color: #1e293b;
+}
+
+.file-info p {
+
+    color: #64748b;
+}

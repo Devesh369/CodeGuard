@@ -15,6 +15,7 @@
         <th>File</th>
         <th>Status</th>
         <th>Uploaded</th>
+        <th>Report</th>
 
     </tr>
 
@@ -40,10 +41,21 @@
             {{ file.uploaded_At }}
         </td>
 
-    </tr>
+   
 
-    {% endfor %}
+    <td>
+        {% if file.analysisreport %}
+        <a href="{% url 'report_detail' file.analysisreport.id %}" class="btn btn-primary">
 
+            View Report
+        </a>
+        {% else %}
+        <span class="badge warning">Not Analyzed </span>
+        {% endif %}
+    </td>
+ </tr>
+
+{% endfor %}
     </tbody>
 
 </table>
