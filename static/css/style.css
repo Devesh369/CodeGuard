@@ -668,3 +668,15 @@ pre {
 
     color: #64748b;
 }
+
+.recommendation-list {
+    margin-top: 15px;
+    padding-left: 22px;
+}
+
+.recommendation-list li {
+    margin-bottom: 10px;
+    font-size: 16px;
+    color: #374151;
+    line-height: 1.6;
+}

@@ -2,20 +2,15 @@
 
 {% extends "accounts/base.html" %}
 
-
-
 {% block content %}
 <div class="report-header-card">
 
     <div class="file-info">
 
-        <h2>
-            📄 {{ report.uploaded_file.file.name|cut:"uploads/" }}
-        </h2>
+        <h2>📄 {{ report.uploaded_file.file.name|cut:"uploads/" }}</h2>
 
         <p>
-            Analyzed on:
-            {{ report.analyzed_at }}
+            Analyzed on: {{ report.analyzed_at }}
         </p>
 
     </div>
@@ -30,6 +25,7 @@
         <div class="score">
             {{ report.pylint_score }}/10
         </div>
+
         <div class="progress">
             <div
             class="progress-fill"
@@ -38,7 +34,7 @@
         </div>
         <p class="score-text">
     {% widthratio report.pylint_score 10 100 %}% Quality Score
-</p>
+        </p>
     </div>
 
     <div class="report-card">
@@ -47,6 +43,21 @@
             {{ report.issue_count }}
         </div>
     </div>
+
+
+    <div class="report-card">
+
+    <h3>
+        Security Issues
+    </h3>
+
+    <div class="score">
+
+        {{ report.security_issue_count }}
+
+    </div>
+
+</div>
 
 </div>
 
@@ -68,30 +79,161 @@ danger
 
 <div class="report-card">
 
-    <h3>
-        Recommendations
-    </h3>
+<h3>💡 Recommendations</h3>
 
-    <pre>
-{{ report.recommendations }}
-    </pre>
 
+<ul class="recommendation-list">
+
+    {% for item in recommendations %}
+
+        <li>{{ item }}</li>
+
+    {% endfor %}
+
+</ul>
 </div>
+<br>
 <div class="report-card">
 
     <details>
 
         <summary>
-            View Full Pylint Report
+            🔒 View Security Scan
         </summary>
 
-       
-             <pre>{{ report.pylint_report }} </pre>
-       
+        {% if security %}
+
+        <table class="security-table">
+
+            <thead>
+                <tr>
+                    <th>Severity</th>
+                    <th>Issue</th>
+                    <th>Line</th>
+                    <th>CWE</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+            {% for item in security %}
+
+                <tr>
+
+                    <td>
+
+                        {% if item.severity == "HIGH" %}
+                            <span class="badge danger">High</span>
+
+                        {% elif item.severity == "MEDIUM" %}
+                            <span class="badge warning">Medium</span>
+
+                        {% else %}
+                            <span class="badge success">Low</span>
+
+                        {% endif %}
+
+                    </td>
+
+                    <td>{{ item.text }}</td>
+
+                    <td>{{ item.line }}</td>
+
+                    <td>CWE-{{ item.cwe }}</td>
+
+                </tr>
+
+            {% endfor %}
+
+            </tbody>
+
+        </table>
+
+        {% else %}
+
+            <p class="success-text">
+                ✅ No security vulnerabilities found.
+            </p>
+
+        {% endif %}
 
     </details>
 
 </div>
 
+<br>
+<div class="report-card">
+
+    <details>
+
+        <summary>
+            📋 View Full Pylint Report
+        </summary>
+
+        {% if pylint %}
+
+        <table class="security-table">
+
+            <thead>
+
+                <tr>
+                    <th>Severity</th>
+                    <th>Code</th>
+                    <th>Issue</th>
+                    <th>Line</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+            {% for item in pylint %}
+
+                <tr>
+
+                    <td>
+
+                        {% if item.severity == "Error" %}
+                            <span class="badge danger">Error</span>
+
+                        {% elif item.severity == "Fatal" %}
+                            <span class="badge danger">Fatal</span>
+
+                        {% elif item.severity == "Warning" %}
+                            <span class="badge warning">Warning</span>
+
+                        {% elif item.severity == "Convention" %}
+                            <span class="badge success">Convention</span>
+
+                        {% else %}
+                            <span class="badge info">Refactor</span>
+
+                        {% endif %}
+
+                    </td>
+
+                    <td>{{ item.code }}</td>
+
+                    <td>{{ item.message }}</td>
+
+                    <td>{{ item.line }}</td>
+
+                </tr>
+
+            {% endfor %}
+
+            </tbody>
+
+        </table>
+
+        {% else %}
+
+            <p>✅ No pylint issues found.</p>
+
+        {% endif %}
+
+    </details>
+
+</div>
 
 {% endblock %}

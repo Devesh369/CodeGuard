@@ -27,6 +27,11 @@ class AnalysisReport(models.Model):
     issue_count = models.IntegerField(default=0)
     quality_status = models.CharField(max_length=30,default="Unknown")
     recommendations = models.TextField(blank=True)
+    pylint_json = models.TextField(blank=True)
+    
+    security_score = models.IntegerField(default=100)
+    security_issue_count = models.IntegerField(default=0)
+    security_report = models.TextField(blank=True)
     
     def __str__(self):
         return (f"Report -" f"{self.uploaded_file.file.name}")

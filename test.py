@@ -1,10 +1,35 @@
-"""
-Simple calculator module.
-"""
+import subprocess
+import os
+import pickle
 
-def add(a, b):
-    """Return sum."""
-    return a + b
+password = "admin123"     # Hardcoded password
 
 
-print(add(10, 20))
+def add(a,b):
+    c = a+b
+    return c
+
+
+unused_variable = 100
+
+
+subprocess.call(
+    "ls -la",
+    shell=True
+)
+
+
+user_input = input("Enter filename: ")
+
+os.system(
+    "cat " + user_input
+)
+
+
+data = input("Enter pickle file: ")
+
+with open(data, "rb") as f:
+    obj = pickle.load(f)
+
+
+print(add(10,20))
