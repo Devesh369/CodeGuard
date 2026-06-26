@@ -2,94 +2,168 @@
 
 {% block content %}
 
-<div class="dashboard">
+<h1>📊 Dashboard</h1>
 
-    <h1>
-        Code Analysis Dashboard
-    </h1>
+<div class="dashboard-cards">
 
-    <div class="cards">
+    <div class="stat-card">
+        <h3>Total Files</h3>
+        <h2>{{ total_files }}</h2>
+    </div>
 
-        <div class="card">
+    <div class="stat-card">
+    <h3>Analyzed Files</h3>
+    <h1>{{ analyzed_files }}</h1>
+    </div>
 
-            <h3>📤 Total Uploads</h3>
+    <div class="stat-card">
+        <h3>Average Score</h3>
+        <h2>{{ average_score }}/10</h2>
+    </div>
 
-            <p>0</p>
+    <div class="stat-card">
+        <h3>Security Issues</h3>
+        <h2>{{ security_count }}</h2>
+    </div>
 
-        </div>
+    <div class="quality-card">
 
-        <div class="card">
+    <h2>
 
-            <h3>🛡 Security Score</h3>
+    Quality Distribution
 
-            <p>
-                95%
-            </p><br>
+    </h2>
 
-            <span class="badge success">
-                Excellent
-            </span>
+    <div class="quality-row">
 
-        </div>
+    <span>🟢 Excellent</span>
 
-        <div class="card">
-
-            <h3>⚙ Code Quality</h3>
-
-            <p>89%</p>
-
-        </div>
-
-        <div class="card">
-
-            <h3>⚠ Issues Found</h3>
-
-            <p>12</p><br>
-            <span class="badge danger">
-                Critical
-            </span>
-            
-        </div>
+    <b>{{ excellent }}</b>
 
     </div>
 
-    <div class="recent-section">
+    <div class="quality-row">
 
-        <h2>
-            Recent Analysis
-        </h2>
+    <span>🔵 Good</span>
 
-        <table>
-
-            <thead>
-
-            <tr>
-                <th>File</th>
-                <th>Status</th>
-                <th>Score</th>
-            </tr>
-
-            </thead>
-
-            <tbody>
-
-            <tr>
-                <td>sample.py</td>
-                <td>Completed</td>
-                <td>9.2</td>
-            </tr>
-
-            <tr>
-                <td>app.py</td>
-                <td>Completed</td>
-                <td>8.7</td>
-            </tr>
-
-            </tbody>
-
-        </table>
+    <b>{{ good }}</b>
 
     </div>
+
+    <div class="quality-row">
+
+    <span>🟡 Needs Improvement</span>
+
+    <b>{{ improve }}</b>
+
+    </div>
+
+    <div class="quality-row">
+
+    <span>🔴 Poor</span>
+
+    <b>{{ poor }}</b>
+
+    </div>
+
+    </div>
+
+</div>
+
+<div class="report-card">
+
+<h2>Recent Analysis</h2>
+<br>
+<table class="recent-table">
+
+<thead>
+
+<tr>
+
+<th>File</th>
+
+<th>Score</th>
+
+<th>Security</th>
+
+<th>Status</th>
+
+<th>Date</th>
+
+<th></th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+{% for report in recent %}
+
+<tr>
+
+<td>
+
+{{ report.uploaded_file.file.name|cut:"uploads/" }}
+
+</td>
+
+<td>
+
+{{ report.pylint_score }}/10
+
+</td>
+
+<td>
+
+{{ report.security_issue_count }}
+
+</td>
+
+<td>
+
+<span class="badge
+{% if report.quality_status == 'Excellent' %}
+excellent
+{% elif report.quality_status == 'Good' %}
+good
+{% elif report.quality_status == 'Needs Improvement' %}
+warning
+{% else %}
+danger
+{% endif %}
+">
+
+{{ report.quality_status }}
+
+</span>
+
+</td>
+
+<td>
+
+{{ report.analyzed_at|date:"d M Y" }}
+
+</td>
+
+<td>
+
+<a class="view-btn"
+href="{% url 'report_detail' report.id %}">
+
+View →
+
+</a>
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
 
 </div>
 

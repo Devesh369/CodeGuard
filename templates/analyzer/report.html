@@ -16,8 +16,11 @@
     </div>
 
 </div>
-<h1>🧾 Analysis Report 🧾 </h1>
+<h1>🧾 Analysis Report  </h1> 
 
+<a class="download-btn" href="{% url 'download_pdf' report.id %}"> ⬇ Download Report </a>
+
+<br><br>
 <div class="report-cards">
 
     <div class="report-card">
@@ -75,7 +78,7 @@ danger
     {{ report.quality_status }}
 </div>
 
-
+<br><br>
 
 <div class="report-card">
 

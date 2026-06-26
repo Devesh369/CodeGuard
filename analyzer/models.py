@@ -21,7 +21,7 @@ class UploadedFile(models.Model):
     
 class AnalysisReport(models.Model):
     uploaded_file = models.OneToOneField(UploadedFile, on_delete=models.CASCADE)
-    pylint_score = models.CharField(max_length=10)
+    pylint_score = models.FloatField(max_length=10)
     pylint_report = models.TextField()
     analyzed_at = models.DateTimeField(auto_now_add=True)
     issue_count = models.IntegerField(default=0)
