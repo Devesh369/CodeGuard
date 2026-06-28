@@ -10,10 +10,10 @@ import ast
 from reportlab.platypus import (SimpleDocTemplate,Paragraph,Spacer,Table,TableStyle)
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
-from reportlab.lib.units import inch
-from reportlab.lib.enums import TA_CENTER
 from reportlab.platypus import Image
 from django.conf import settings
+from reportlab.lib.units import inch
+from reportlab.lib.utils import ImageReader
 
 
 from .forms import UploadFileForm
@@ -199,7 +199,13 @@ def download_pdf(request, report_id):
         f'attachment; filename="CodeGuard_Report_{report.id}.pdf"'
     )
 
-    doc = SimpleDocTemplate(response)
+    doc = SimpleDocTemplate(
+            response,
+            leftMargin=30,
+            rightMargin=30,
+            topMargin=20,
+            bottomMargin=110
+        )
 
     styles = getSampleStyleSheet()
 
@@ -212,49 +218,47 @@ def download_pdf(request, report_id):
     # Banner
     # ==========================================================
 
-    banner_path = os.path.join(
+    header_path = os.path.join(
         settings.BASE_DIR,
         "static",
         "images",
-        "pdf-banner.png"
-    )
-
-    if os.path.exists(banner_path):
-
-        banner = Image(
-            banner_path,
-            width=450,
-            height=170
+        "pdf_header.png"
         )
 
-        banner.hAlign = "CENTER"
 
-        story.append(banner)
+    if os.path.exists(header_path):
 
-        story.append(Spacer(1, 20))
-
-    else:
-
-        title = Paragraph(
-            "<b><font size='24'>CodeGuard</font></b>",
-            styles["Title"]
+        header = Image(
+            header_path,
+            width=8.5 * inch,
+            height=3.0 * inch
         )
 
-        story.append(title)
+        header.hAlign = "CENTER"
 
-        subtitle = Paragraph(
-            "<font size='14' color='gray'>AI Code Security Analysis Report</font>",
-            styles["Heading2"]
-        )
+        story.append(header)
 
-        story.append(subtitle)
+        story.append(Spacer(1, 0.40 * inch))
+        
 
-        story.append(Spacer(1, 20))
 
     # ==========================================================
     # Summary Table
     # ==========================================================
+    
+    status = report.quality_status
 
+    if status == "Excellent":
+        status = "<font color='green'><b>Excellent</b></font>"
+
+    elif status == "Good":
+        status = "<font color='blue'><b>Good</b></font>"
+
+    elif status == "Needs Improvement":
+        status = "<font color='orange'><b>Needs Improvement</b></font>"
+
+    else:
+        status = "<font color='red'><b>Poor</b></font>"   
     summary = [
 
         ["File", report.uploaded_file.file.name],
@@ -263,7 +267,7 @@ def download_pdf(request, report_id):
 
         ["Quality Score", f"{report.pylint_score}/10"],
 
-        ["Quality Status", report.quality_status],
+        ["Quality Status", Paragraph(status, normal_style)],
 
         ["Code Issues", str(report.issue_count)],
 
@@ -273,7 +277,7 @@ def download_pdf(request, report_id):
 
     table = Table(
         summary,
-        colWidths=[160, 320]
+        colWidths=[180, 360]
     )
 
     table.setStyle(
@@ -330,57 +334,152 @@ def download_pdf(request, report_id):
     story.append(table)
 
     story.append(Spacer(1, 0.4 * inch))
+    # ==========================================================
+    # PRINT DATA (pylint & bandint)
+    # ==========================================================
+    story.append(Spacer(1, 20))
+    story.append(Paragraph("Code Quality Issues", heading_style))
+    story.append(Spacer(1, 10))
+    
+    quality_data = [
+        ["Line", "Code", "Severity", "Description"]
+]
+
+    for issue in json.loads(report.pylint_json):
+        quality_data.append([
+            issue["line"],
+            issue["code"],
+            issue["severity"],
+            issue["message"],
+        ])
+        
+    quality_table = Table(
+    quality_data,
+    colWidths=[50,60,90,320],
+    repeatRows=1
+    )
+    quality_table.setStyle(TableStyle([
+    ("BACKGROUND",(0,0),(-1,0),colors.HexColor("#29408B")),
+    ("TEXTCOLOR",(0,0),(-1,0),colors.white),
+    ("GRID",(0,0),(-1,-1),0.5,colors.grey),
+    ("BACKGROUND",(0,1),(-1,-1),colors.whitesmoke),
+    ("FONTNAME",(0,0),(-1,0),"Helvetica-Bold"),
+    ("BOTTOMPADDING",(0,0),(-1,0),8),
+    ]))
+    
+    story.append(quality_table)
+    
+    
+    story.append(Spacer(1,20))
+    story.append(Paragraph("Security Issues", heading_style))
+    story.append(Spacer(1,10))
+    
+    security_data = [
+    ["Line","Severity","CWE","Description"]
+    ]
+
+    security = json.loads(report.security_report)
+    
+    if security:
+        security_data = [["Line", "Severity", "CWE", "Description"]]
+        for issue in security:
+            security_data.append([
+                issue["line"],
+                issue["severity"],
+                issue["cwe"],
+                issue["issue"],
+            ])
+            security_table = Table(
+            security_data,
+            colWidths=[50,80,80,250]
+            )
+        
+        security_table.setStyle(TableStyle([
+        ("BACKGROUND",(0,0),(-1,0),colors.HexColor("#B91C1C")),
+        ("TEXTCOLOR",(0,0),(-1,0),colors.white),
+        ("GRID",(0,0),(-1,-1),0.5,colors.grey),
+        ("BACKGROUND",(0,1),(-1,-1),colors.whitesmoke),
+        ("FONTNAME",(0,0),(-1,0),"Helvetica-Bold"),
+        ("BOTTOMPADDING",(0,0),(-1,0),8),
+        ]))
+        
+        story.append(security_table)
+    else:
+        story.append(
+        Paragraph(
+            "<font color='green'><b>✓ No security vulnerabilities detected.</b></font>",
+        )
+    )
+
+    story.append(
+        Paragraph(
+            "Bandit found no security issues in this file.",
+            
+        )
+    )
+        
+    
+    
 
     # ==========================================================
     # Recommendations
     # ==========================================================
-
-    story.append(
-
-        Paragraph(
-            "Recommendations",
-            heading_style
-        )
-
-    )
-
+    story.append(Spacer(1,20))
+    story.append(Paragraph("Recommendations",heading_style))
     story.append(Spacer(1, 10))
 
     for rec in report.recommendations.split("\n"):
-
         if rec.strip():
 
-            story.append(
-
-                Paragraph(
-                    f"• {rec}",
-                    normal_style
-                )
-
-            )
-
-            story.append(
-                Spacer(1, 5)
-            )
-
-    story.append(
-        Spacer(1, 20)
-    )
+            story.append(Paragraph(f"<font color='green'>✔</font> {rec}",normal_style))
+            
 
     # ==========================================================
     # Footer
     # ==========================================================
+    def draw_footer(canvas, doc):
 
-    footer = Paragraph(
+        footer_path = os.path.join(
+        settings.BASE_DIR,
+        "static",
+        "images",
+        "pdf_footer.png"
+        )
 
-        "<b><i>Generated by CodeGuard</i></b>",
+        if os.path.exists(footer_path):
 
-        styles["Heading3"]
+            footer = ImageReader(footer_path)
 
+            page_width, page_height = doc.pagesize
+            
+            
+            
+            canvas.drawImage(
+                footer,
+                x=0,
+                y=10,
+                width=8.0 * inch,
+                height=1.85 * inch,
+                preserveAspectRatio=False,
+                mask="auto"
+            )
+
+            canvas.saveState()
+
+            canvas.setFont("Helvetica", 9)
+
+            canvas.drawRightString(
+                page_width - 30,
+                15,
+                f"Page {doc.page}"
+            )
+
+            canvas.restoreState()
+
+    doc.build(
+    story,
+    onFirstPage=draw_footer,
+    onLaterPages=draw_footer
     )
-
-    story.append(footer)
-
-    doc.build(story)
 
     return response

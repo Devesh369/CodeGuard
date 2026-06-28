@@ -22,15 +22,14 @@
     <div class="auth-card">
 
         <div class="logo">
+<img src="{% static 'images/log_logo.png' %}"
+         class="auth-logo"
+         alt="CodeGuard Logo"> 
+         {% comment %} <h2> 🛡️ CodeGuard 🛡️ </h2> {% endcomment %}
 
-           {% comment %} <h1><img src="{% static 'images/codeguard-logo.png' %}" class="auth-logo"> </h1> {% endcomment %}
-                 <h2> 🛡️ CodeGuard 🛡️ </h2>
-            <p>
-                AI Code Security Platform
-            </p>
+    <p>AI Code Security Platform</p>
 
-        </div>
-
+</div>
         <form method="POST">
 
             {% csrf_token %}
