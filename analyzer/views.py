@@ -121,7 +121,6 @@ def report_detail(request, report_id):
         AnalysisReport,
         id=report_id
     )
-
     # ------------------------
     # Security Report
     # ------------------------
@@ -129,17 +128,16 @@ def report_detail(request, report_id):
     security = []
 
     if report.security_report:
-
         try:
             security = json.loads(report.security_report)
-
-        except json.JSONDecodeError:
-
+        except (json.JSONDecodeError, TypeError, ValueError):
             try:
                 security = ast.literal_eval(report.security_report)
-
             except Exception:
                 security = []
+
+    print(security)
+
 
     # ------------------------
     # Pylint Report
@@ -148,19 +146,16 @@ def report_detail(request, report_id):
     pylint = []
 
     if report.pylint_json:
-
         try:
             pylint = json.loads(report.pylint_json)
-
-        except json.JSONDecodeError:
-
+        except (json.JSONDecodeError, TypeError, ValueError):
             try:
                 pylint = ast.literal_eval(report.pylint_json)
-
             except Exception:
                 pylint = []
-                
+
     print(pylint)
+
 
     # ------------------------
     # Recommendations
@@ -171,6 +166,11 @@ def report_detail(request, report_id):
     if report.recommendations:
         recommendations = report.recommendations.split("\n")
 
+
+    # ------------------------
+    # Context
+    # ------------------------
+
     context = {
         "report": report,
         "security": security,
@@ -178,12 +178,13 @@ def report_detail(request, report_id):
         "recommendations": recommendations,
     }
 
+
     return render(
         request,
         "analyzer/report.html",
         context,
-    )
-    
+    ) 
+       
 @login_required
 def download_pdf(request, report_id):
 
@@ -230,7 +231,7 @@ def download_pdf(request, report_id):
 
         header = Image(
             header_path,
-            width=8.5 * inch,
+            width=doc.width + doc.leftMargin + doc.rightMargin,
             height=3.0 * inch
         )
 
@@ -261,9 +262,9 @@ def download_pdf(request, report_id):
         status = "<font color='red'><b>Poor</b></font>"   
     summary = [
 
-        ["File", report.uploaded_file.file.name],
+        ["File", os.path.basename(report.uploaded_file.file.name)],
 
-        ["Date", str(report.analyzed_at)],
+        ["Date", report.analyzed_at.strftime("%d %B %Y %I:%M %p")],
 
         ["Quality Score", f"{report.pylint_score}/10"],
 
@@ -365,6 +366,8 @@ def download_pdf(request, report_id):
     ("BACKGROUND",(0,1),(-1,-1),colors.whitesmoke),
     ("FONTNAME",(0,0),(-1,0),"Helvetica-Bold"),
     ("BOTTOMPADDING",(0,0),(-1,0),8),
+    ("VALIGN",(0,0),(-1,-1),"TOP"),
+    
     ]))
     
     story.append(quality_table)
@@ -375,65 +378,81 @@ def download_pdf(request, report_id):
     story.append(Spacer(1,10))
     
     security_data = [
-    ["Line","Severity","CWE","Description"]
-    ]
+    ["Line", "Severity", "Confidence", "CWE", "Description"]]
+    
+    security_data.append([
+    issue.get("line", "-"),
+    issue.get("severity", "-"),
+    issue.get("confidence", "-"),
+    issue.get("cwe", "-"),
+    Paragraph(issue.get("text", "-"), normal_style)
+])
 
-    security = json.loads(report.security_report)
+    try:
+        security = json.loads(report.security_report)
+        print(json.dumps(security, indent=4))
+        
+        
+    except:
+        security = []
+        print(json.dumps(security, indent=4))
     
     if security:
-        security_data = [["Line", "Severity", "CWE", "Description"]]
-        for issue in security:
-            security_data.append([
-                issue["line"],
-                issue["severity"],
-                issue["cwe"],
-                issue["issue"],
+            security_data = [["Line", "Severity", "CWE", "Description"]]
+            for issue in security:
+                security_data.append([
+                issue.get("line", "-"),
+                issue.get("severity", "-"),
+                issue.get("cwe", "-"),
+                Paragraph(issue.get("text", "-"),normal_style)
             ])
-            security_table = Table(
-            security_data,
-            colWidths=[50,80,80,250]
-            )
-        
-        security_table.setStyle(TableStyle([
-        ("BACKGROUND",(0,0),(-1,0),colors.HexColor("#B91C1C")),
-        ("TEXTCOLOR",(0,0),(-1,0),colors.white),
-        ("GRID",(0,0),(-1,-1),0.5,colors.grey),
-        ("BACKGROUND",(0,1),(-1,-1),colors.whitesmoke),
-        ("FONTNAME",(0,0),(-1,0),"Helvetica-Bold"),
-        ("BOTTOMPADDING",(0,0),(-1,0),8),
-        ]))
-        
-        story.append(security_table)
+                security_table = Table(
+                    security_data,
+                    colWidths=[40, 60, 70, 50, 320],
+                    repeatRows=1
+                )
+            
+            security_table.setStyle(TableStyle([
+            ("BACKGROUND",(0,0),(-1,0),colors.HexColor("#B91C1C")),
+            ("TEXTCOLOR",(0,0),(-1,0),colors.white),
+            ("GRID",(0,0),(-1,-1),0.5,colors.grey),
+            ("BACKGROUND",(0,1),(-1,-1),colors.whitesmoke),
+            ("FONTNAME",(0,0),(-1,0),"Helvetica-Bold"),
+            ("BOTTOMPADDING",(0,0),(-1,0),8),
+            ]))
+            
+            story.append(security_table)
     else:
-        story.append(
+            story.append(
         Paragraph(
             "<font color='green'><b>✓ No security vulnerabilities detected.</b></font>",
+            normal_style
         )
     )
-
-    story.append(
-        Paragraph(
-            "Bandit found no security issues in this file.",
             
-        )
-    )
         
-    
-    
+        
 
     # ==========================================================
     # Recommendations
     # ==========================================================
-    story.append(Spacer(1,20))
-    story.append(Paragraph("Recommendations",heading_style))
+
+    story.append(Spacer(1, 20))
+    story.append(Paragraph("Recommendations", heading_style))
     story.append(Spacer(1, 10))
 
     for rec in report.recommendations.split("\n"):
-        if rec.strip():
 
-            story.append(Paragraph(f"<font color='green'>✔</font> {rec}",normal_style))
-            
+        rec = rec.strip()
 
+        if rec:
+
+            story.append(
+                Paragraph(
+                f"<font color='#16A34A'><b>✔</b></font> {rec}",
+                normal_style
+            )
+        )
     # ==========================================================
     # Footer
     # ==========================================================
@@ -458,7 +477,7 @@ def download_pdf(request, report_id):
                 footer,
                 x=0,
                 y=10,
-                width=8.0 * inch,
+                width = doc.width + doc.leftMargin + doc.rightMargin,
                 height=1.85 * inch,
                 preserveAspectRatio=False,
                 mask="auto"
