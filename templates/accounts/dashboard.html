@@ -4,6 +4,8 @@
 
 <h1>📊 Dashboard</h1>
 
+<!-- ================= Statistics Cards ================= -->
+
 <div class="dashboard-cards">
 
     <div class="stat-card">
@@ -12,8 +14,8 @@
     </div>
 
     <div class="stat-card">
-    <h3>Analyzed Files</h3>
-    <h1>{{ analyzed_files }}</h1>
+        <h3>Analyzed Files</h3>
+        <h2>{{ analyzed_files }}</h2>
     </div>
 
     <div class="stat-card">
@@ -26,145 +28,324 @@
         <h2>{{ security_count }}</h2>
     </div>
 
-    <div class="quality-card">
+</div>
 
-    <h2>
 
-    Quality Distribution
+<!-- ================= Charts ================= -->
 
-    </h2>
+<div class="chart-grid">
 
-    <div class="quality-row">
+    <div class="chart-card">
 
-    <span>🟢 Excellent</span>
+        <h2>Code Quality Distribution</h2>
 
-    <b>{{ excellent }}</b>
-
-    </div>
-
-    <div class="quality-row">
-
-    <span>🔵 Good</span>
-
-    <b>{{ good }}</b>
+        <canvas id="qualityChart"></canvas>
 
     </div>
 
-    <div class="quality-row">
+    <div class="chart-card">
 
-    <span>🟡 Needs Improvement</span>
+        <h2>Security Overview</h2>
 
-    <b>{{ improve }}</b>
-
-    </div>
-
-    <div class="quality-row">
-
-    <span>🔴 Poor</span>
-
-    <b>{{ poor }}</b>
-
-    </div>
+        <canvas id="securityChart"></canvas>
 
     </div>
 
 </div>
 
-<div class="report-card">
 
-<h2>Recent Analysis</h2>
-<br>
-<table class="recent-table">
+<!-- ================= Statistics ================= -->
 
-<thead>
+<div class="quality-card">
 
-<tr>
+    <h2>Project Statistics</h2>
 
-<th>File</th>
+    <div class="quality-row">
 
-<th>Score</th>
+        <span>Total Files</span>
 
-<th>Security</th>
+        <strong>{{ total_files }}</strong>
 
-<th>Status</th>
+    </div>
 
-<th>Date</th>
+    <div class="quality-row">
 
-<th></th>
+        <span>Analyzed Files</span>
 
-</tr>
+        <strong>{{ analyzed_files }}</strong>
 
-</thead>
+    </div>
 
-<tbody>
+    <div class="quality-row">
 
-{% for report in recent %}
+        <span>Average Score</span>
 
-<tr>
+        <strong>{{ average_score }}/10</strong>
 
-<td>
+    </div>
 
-{{ report.uploaded_file.file.name|cut:"uploads/" }}
+    <div class="quality-row">
 
-</td>
+        <span>Total Code Issues</span>
 
-<td>
+        <strong>{{ total_code_issues }}</strong>
 
-{{ report.pylint_score }}/10
+    </div>
 
-</td>
+    <div class="quality-row">
 
-<td>
+        <span>Total Security Issues</span>
 
-{{ report.security_issue_count }}
+        <strong>{{ total_security_issues }}</strong>
 
-</td>
-
-<td>
-
-<span class="badge
-{% if report.quality_status == 'Excellent' %}
-excellent
-{% elif report.quality_status == 'Good' %}
-good
-{% elif report.quality_status == 'Needs Improvement' %}
-warning
-{% else %}
-danger
-{% endif %}
-">
-
-{{ report.quality_status }}
-
-</span>
-
-</td>
-
-<td>
-
-{{ report.analyzed_at|date:"d M Y" }}
-
-</td>
-
-<td>
-
-<a class="view-btn"
-href="{% url 'report_detail' report.id %}">
-
-View →
-
-</a>
-
-</td>
-
-</tr>
-
-{% endfor %}
-
-</tbody>
-
-</table>
+    </div>
 
 </div>
+
+
+<!-- ================= Recent Reports ================= -->
+
+<div class="recent-section">
+
+    <h2>Recent Analysis</h2>
+
+    <br>
+
+    <table class="recent-table">
+
+        <thead>
+
+            <tr>
+
+                <th>File</th>
+
+                <th>Score</th>
+
+                <th>Security</th>
+
+                <th>Status</th>
+
+                <th>Date</th>
+
+                <th>Action</th>
+
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+        {% for report in recent %}
+
+            <tr>
+
+                <td>
+
+                    {{ report.uploaded_file.file.name|cut:"uploads/" }}
+
+                </td>
+
+                <td>
+
+                    {{ report.pylint_score }}/10
+
+                </td>
+
+                <td>
+
+                    {{ report.security_issue_count }}
+
+                </td>
+
+                <td>
+
+                    <span class="status-badge
+                        {% if report.quality_status == 'Excellent' %}
+                        status-excellent
+                        {% elif report.quality_status == 'Good' %}
+                        status-good
+                        {% elif report.quality_status == 'Needs Improvement' %}
+                        status-warning
+                        {% else %}
+                        status-poor
+                        {% endif %}
+                        ">
+                        {{ report.quality_status }}
+                    </span>
+
+                </td>
+
+                <td>
+
+                    {{ report.analyzed_at|date:"d M Y" }}
+
+                </td>
+
+                <td>
+
+                    <a class="view-btn"
+
+                       href="{% url 'report_detail' report.id %}">
+
+                        View →
+
+                    </a>
+
+                </td>
+
+            </tr>
+
+        {% empty %}
+
+            <tr>
+
+                <td colspan="6" style="text-align:center">
+
+                    No reports available.
+
+                </td>
+
+            </tr>
+
+        {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    // ================= Quality Chart =================
+
+    const qualityCanvas = document.getElementById("qualityChart");
+
+    if (qualityCanvas) {
+
+        new Chart(qualityCanvas, {
+
+            type: "pie",
+
+            data: {
+
+                labels: [
+                    "Excellent",
+                    "Good",
+                    "Needs Improvement",
+                    "Poor"
+                ],
+
+                datasets: [{
+
+                    data: [
+                        {{ excellent }},
+                        {{ good }},
+                        {{ improve }},
+                        {{ poor }}
+                    ],
+
+                    backgroundColor: [
+                        "#10B981",
+                        "#3B82F6",
+                        "#F59E0B",
+                        "#EF4444"
+                    ]
+
+                }]
+
+            },
+
+            options: {
+
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false
+
+            }
+
+        });
+
+    }
+
+    // ================= Security Chart =================
+
+    const securityCanvas = document.getElementById("securityChart");
+
+    if (securityCanvas) {
+
+        new Chart(securityCanvas, {
+
+            type: "bar",
+
+            data: {
+
+                labels: [
+                    "Files",
+                    "Code Issues",
+                    "Security Issues"
+                ],
+
+                datasets: [{
+
+                    label: "Statistics",
+
+                    data: [
+                        {{ total_files }},
+                        {{ total_code_issues }},
+                        {{ security_count }}
+                    ],
+
+                    backgroundColor: [
+                        "#2563EB",
+                        "#F59E0B",
+                        "#EF4444"
+                    ]
+
+                }]
+
+            },
+
+            options: {
+
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+
+                plugins: {
+
+                    legend: {
+
+                        display: false
+
+                    }
+
+                },
+
+                scales: {
+
+                    y: {
+
+                        beginAtZero: true
+
+                    }
+
+                }
+
+            }
+
+        });
+
+    }
+
+});
+
+</script>
 
 {% endblock %}

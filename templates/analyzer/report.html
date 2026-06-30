@@ -66,13 +66,13 @@
 
 <div class="quality-badge
 {% if report.quality_status == 'Excellent' %}
-excellent
+<p>🟩 Excellent </p>
 {% elif report.quality_status == 'Good' %}
-good
+<p>🟦 Good </p>
 {% elif report.quality_status == 'Needs Improvement' %}
-warning
+<p>🟨 Needs To Improvement </p>
 {% else %}
-danger
+<p>🟥Poor</p>
 {% endif %}
 ">
     {{ report.quality_status }}

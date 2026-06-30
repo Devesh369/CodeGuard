@@ -9,6 +9,9 @@ from analyzer.models import UploadedFile, AnalysisReport
 from django.db.models.functions import Cast
 
 
+
+
+
 def register_view(request):
     if request.method == "POST":
         form = RegisterForm(request.POST)
@@ -90,8 +93,13 @@ def dashboard(request):
         "-analyzed_at"
     )[:5]
 
+    total_code_issues = reports.aggregate(
+    Sum("issue_count")
+    )["issue_count__sum"] or 0
+    
     context = {
-
+        "reports": reports,
+        
         "total_files": files.count(),
 
         "analyzed_files": reports.count(),
@@ -101,12 +109,15 @@ def dashboard(request):
         "security_count":
             security["security_issue_count__sum"] or 0,
 
+        "total_security_issues": security["security_issue_count__sum"] or 0,
+        
         "excellent": excellent,
         "good": good,
         "improve": improve,
         "poor": poor,
 
         "recent": recent,
+        "total_code_issues": total_code_issues,
     }
 
     return render(
