@@ -21,6 +21,10 @@ from .models import UploadedFile , AnalysisReport
 from .services.code_analyzer import (analyze_python_file)
 from .services.security_analyzer import analyze_security
 
+from django.db.models import Q
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+
 
 @login_required
 def upload_file(request):
@@ -109,9 +113,26 @@ def upload_file(request):
 
 @login_required
 def my_files(request):
+    query = request.GET.get("q", "")
     files = UploadedFile.objects.filter(user=request.user)
-    
-    return render(request, "analyzer/my_files.html", {"files":files})
+    if query:
+        files = files.filter(
+
+        Q(file__icontains=query) |
+
+        Q(analysisreport__quality_status__icontains=query)
+
+        ).distinct()
+    context = {
+        "files": files,
+        "query": query,
+    }
+        
+    return render(
+        request,
+        "analyzer/my_files.html",
+        context,
+    )
 
 
 @login_required
@@ -502,3 +523,38 @@ def download_pdf(request, report_id):
     )
 
     return response
+
+
+
+@login_required
+def search_files(request):
+
+    q=request.GET.get("q","")
+
+    files=UploadedFile.objects.filter(
+
+        user=request.user,
+
+        file__icontains=q
+
+    )[:10]
+
+    data=[]
+
+    for file in files:
+
+        report=AnalysisReport.objects.filter(
+
+            uploaded_file=file
+
+        ).first()
+
+        data.append({
+
+            "name":file.file.name.replace("uploads/",""),
+
+            "report_id":report.id if report else None
+
+        })
+
+    return JsonResponse(data,safe=False)

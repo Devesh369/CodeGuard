@@ -6,18 +6,49 @@
     My Uploaded Files
 </h1>
 
-<table>
+
+<div class="search-container">
+
+    <form method="GET">
+
+        <div class="search-box">
+
+            <i class="fa-solid fa-magnifying-glass"> </i> 
+
+            &nbsp;&nbsp; <input
+                type="text"
+                id="searchInput"
+                placeholder="Search files..."
+                autocomplete="off">
+
+            <div id="searchResults"></div>
+
+
+            
+        </div>
+
+    </form>
+<br>
+</div>
+<table class="files-table">
+
+    <colgroup>
+        <col style="width:40%">
+        <col style="width:18%">
+        <col style="width:22%">
+        <col style="width:20%">
+    </colgroup>
 
     <thead>
 
-    <tr>
+        <tr>
 
-        <th>File</th>
-        <th>Status</th>
-        <th>Uploaded</th>
-        <th>Report</th>
+            <th>File</th>
+            <th>Status</th>
+            <th>Uploaded</th>
+            <th>Report</th>
 
-    </tr>
+        </tr>
 
     </thead>
 
@@ -27,37 +58,153 @@
 
     <tr>
 
-        <td>
-            {{ file.file.name }}
+        <td class="file-column">
+            {{ file.file.name|cut:"uploads/" }}
         </td>
 
         <td>
-            <span class="badge warning">
-                {{ file.status }}
-            </span>
+
+            {% if file.analysisreport %}
+
+                <span class="status-badge status-good">
+
+                    Analyzed
+
+                </span>
+
+            {% else %}
+
+                <span class="status-badge status-warning">
+
+                    Pending
+
+                </span>
+
+            {% endif %}
+
         </td>
 
         <td>
-            {{ file.uploaded_At }}
+
+            {{ file.uploaded_At|date:"d M Y, h:i A" }}
+
         </td>
 
-   
+        <td>
 
-    <td>
-        {% if file.analysisreport %}
-        <a href="{% url 'report_detail' file.analysisreport.id %}" class="btn btn-primary">
+            {% if file.analysisreport %}
 
-            View Report
-        </a>
-        {% else %}
-        <span class="badge warning">Not Analyzed </span>
-        {% endif %}
-    </td>
- </tr>
+                <a href="{% url 'report_detail' file.analysisreport.id %}"
+                   class="view-btn">
 
-{% endfor %}
+                    <i class="fa-solid fa-eye"></i>
+
+                    View Report
+
+                </a>
+
+            {% else %}
+
+                <span class="pending-btn">
+
+                    Not Available
+
+                </span>
+
+            {% endif %}
+
+        </td>
+
+    </tr>
+
+    {% endfor %}
+
     </tbody>
 
 </table>
 
+
+
+<script>
+
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const input = document.getElementById("searchInput");
+    const results = document.getElementById("searchResults");
+
+    input.addEventListener("keyup", function () {
+
+        const q = this.value.trim();
+
+        if (q === "") {
+            results.innerHTML = "";
+            results.style.display = "none";
+            return;
+        }
+
+        fetch("/search_files/?q=" + encodeURIComponent(q))
+
+        .then(response => response.json())
+
+        .then(data => {
+
+            results.innerHTML = "";
+
+            if (data.length === 0) {
+
+                results.style.display = "none";
+                return;
+
+            }
+
+            results.style.display = "block";
+
+            data.forEach(function(file){
+
+                const item = document.createElement("a");
+
+                item.className = "result-item";
+
+                item.textContent = file.name;
+
+                if(file.report_id){
+
+                    item.href = "/report/" + file.report_id + "/";
+
+                }else{
+
+                    item.href = "#";
+
+                    item.addEventListener("click",function(e){
+
+                        e.preventDefault();
+
+                        alert("This file has not been analyzed yet.");
+
+                    });
+
+                }
+
+                results.appendChild(item);
+
+            });
+
+        });
+
+    });
+
+    document.addEventListener("click",function(e){
+
+        if(!e.target.closest(".search-container")){
+
+            results.style.display="none";
+
+        }
+
+    });
+
+});
+
+</script>
 {% endblock %}
