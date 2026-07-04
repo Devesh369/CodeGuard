@@ -1,7 +1,7 @@
 {% extends 'accounts/base.html' %}
 
 {% block content %}
-
+<div class="files-page">
 <h1>
     My Uploaded Files
 </h1>
@@ -90,7 +90,7 @@
 
         </td>
 
-        <td>
+        <td class="action-column">
 
             {% if file.analysisreport %}
 
@@ -102,16 +102,12 @@
                     View Report
 
                 </a>
-
-            {% else %}
-
-                <span class="pending-btn">
-
-                    Not Available
-
-                </span>
-
-            {% endif %}
+        {% endif %}
+            <button type='button' class="delete-btn" onclick= "confirmDelete('{{ file.id }}', '{{file.file.name|cut:'uploads/'}}')">
+                <i class="fa-solid fa-trash"></i>
+                Delete
+            </button>
+                    
 
         </td>
 
@@ -207,4 +203,86 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 </script>
+<div id="deleteModal" class="modal">
+
+    <div class="modal-content">
+
+        <span class="close-modal" onclick="closeModal()">&times;</span>
+
+        <h2 class="delete-title">
+
+            <i class="fa-solid fa-trash"></i>
+
+            Delete File
+
+        </h2>
+
+        <p id="deleteText"></p>
+
+        <div class="modal-buttons">
+
+            <button
+                type="button"
+                class="cancel-btn"
+                onclick="closeModal()">
+
+                Cancel
+
+            </button>
+
+            <form id="deleteForm" method="POST">
+
+                {% csrf_token %}
+
+                <button
+                    type="submit"
+                    class="confirm-delete-btn">
+
+                    Delete
+
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+<script>
+
+function confirmDelete(id,name){
+
+    document.getElementById("deleteText").innerHTML =
+        `
+        This action cannot be undone.<br><br>
+        Are you sure you want to delete
+        <strong>${name}</strong> ?
+        `;
+
+    document.getElementById("deleteForm").action =
+        "/delete_file/" + id + "/";
+
+    document.getElementById("deleteModal").style.display="flex";
+
+}
+
+function closeModal(){
+
+    document.getElementById("deleteModal").style.display="none";
+
+}
+
+window.onclick=function(e){
+
+    if(e.target.id==="deleteModal"){
+
+        closeModal();
+
+    }
+
+}
+
+</script>
+</div>
 {% endblock %}

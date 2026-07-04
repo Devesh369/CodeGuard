@@ -8,4 +8,6 @@ urlpatterns = [
     path("report/<int:report_id>/",report_detail, name="report_detail"),
     path("report/<int:report_id>/pdf/", download_pdf, name="download_pdf"),
     path("search_files/",search_files, name="search_files"),
+    path("delete_file/<int:file_id>/", delete_file , name="delete_file"),
+    
 ]

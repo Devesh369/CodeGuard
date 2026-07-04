@@ -86,23 +86,19 @@ SIDEBAR
 
 .sidebar {
 
-    width: 260px;
-
-    background: var(--primary);
-
-    color: #fff;
-
     position: fixed;
-
-    left: 0;
 
     top: 0;
 
-    bottom: 0;
+    left: 0;
 
-    overflow-y: auto;
+    width: 270px;
 
-    transition: .35s;
+    height: 100vh;
+
+    background: #223D8F;
+
+    transition: .35s ease;
 
     z-index: 1000;
 
@@ -259,27 +255,22 @@ TOPBAR
 ========================================================== */
 
 .topbar {
-
     display: flex;
-
     justify-content: space-between;
-
     align-items: center;
 
-    margin-bottom: 35px;
+    margin-bottom: 40px;
 
+    position: relative;
+    z-index: 100;
 }
 
 /* ========================================================== */
 
 .topbar-left {
-
     display: flex;
-
     align-items: center;
-
     gap: 20px;
-
 }
 
 /* ========================================================== */
@@ -287,30 +278,47 @@ TOPBAR
 .menu-btn {
 
     width: 48px;
-
     height: 48px;
 
     border: none;
-
-    border-radius: 12px;
+    border-radius: 50%;
 
     background: #fff;
+    color: #29408B;
 
+    font-size: 20px;
     cursor: pointer;
 
-    box-shadow: var(--shadow);
+    display: flex;
+    justify-content: center;
+    align-items: center;
 
-    font-size: 18px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, .08);
+
+    transition: .3s;
+
+    position: relative;
+    z-index: 1200;
+}
+
+.menu-btn:hover {
+
+    background: #29408B;
+    color: white;
+
+    transform: translateY(-2px);
+
+}
+
+.menu-btn.active {
+
+    background: #29408B;
+    color: white;
 
 }
 
 /* ========================================================== */
 
-.menu-btn:hover {
-
-    background: #EEF2FF;
-
-}
 
 /* ========================================================== */
 
@@ -1741,12 +1749,6 @@ input[type="file"] {
 SEARCH BAR
 =========================================== */
 
-.search-container {
-    position: relative;
-    width: 100%;
-}
-
-
 .search-box {
 
     display: flex;
@@ -1888,24 +1890,16 @@ EMPTY SEARCH
 
 }
 
-.search-container {
-
-    position: relative;
-
-    width: 350px;
-
-}
 
 .search-container {
     position: relative;
     width: 100%;
-    margin-bottom: 25px 0;
+    margin: 25px 0;
 }
 
 .search-box {
     position: relative;
-    width: 200%;
-
+    width: 100%;
     max-width: 750px;
 }
 
@@ -1984,4 +1978,705 @@ EMPTY SEARCH
 .result-item:hover {
     background: #edf3ff;
     color: #1e40af;
+}
+
+.modal-content h2 {
+
+    color: #dc2626;
+
+    margin-bottom: 15px;
+
+}
+
+/* ================= Delete Modal ================= */
+
+.modal {
+
+    display: none;
+
+    position: fixed;
+
+    inset: 0;
+
+    background: rgba(0, 0, 0, .55);
+
+    justify-content: center;
+
+    align-items: center;
+
+    z-index: 9999;
+
+}
+
+.modal-content {
+
+    width: 450px;
+
+    background: #fff;
+
+    border-radius: 18px;
+
+    padding: 35px;
+
+    position: relative;
+
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .25);
+
+    text-align: center;
+
+}
+
+.delete-title {
+
+    color: #dc2626;
+
+    font-size: 30px;
+
+    margin-bottom: 20px;
+
+}
+
+#deleteText {
+
+    font-size: 18px;
+
+    color: #555;
+
+    line-height: 1.7;
+
+}
+
+.modal-buttons {
+
+    display: flex;
+
+    justify-content: center;
+
+    gap: 20px;
+
+    margin-top: 30px;
+
+}
+
+.cancel-btn {
+
+    background: #e5e7eb;
+
+    color: #333;
+
+    border: none;
+
+    padding: 12px 28px;
+
+    border-radius: 10px;
+
+    cursor: pointer;
+
+    font-size: 16px;
+
+}
+
+.confirm-delete-btn {
+
+    background: #dc2626;
+
+    color: white;
+
+    border: none;
+
+    padding: 12px 28px;
+
+    border-radius: 10px;
+
+    cursor: pointer;
+
+    font-size: 16px;
+
+}
+
+.confirm-delete-btn:hover {
+
+    background: #b91c1c;
+
+}
+
+.cancel-btn:hover {
+
+    background: #d1d5db;
+
+}
+
+.close-modal {
+
+    position: absolute;
+
+    top: 18px;
+
+    right: 20px;
+
+    font-size: 32px;
+
+    cursor: pointer;
+
+    color: #777;
+
+}
+
+.close-modal:hover {
+
+    color: #dc2626;
+
+}
+
+.delete-btn {
+
+    background: #dc2626;
+
+    color: white;
+
+    border: none;
+
+    padding: 10px 16px;
+
+    border-radius: 8px;
+
+    cursor: pointer;
+
+    margin-top: 8px;
+
+}
+
+.delete-btn:hover {
+
+    background: #b91c1c;
+
+}
+
+/* ===========================
+   Topbar Right
+=========================== */
+
+.topbar-right {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 15px;
+
+}
+
+/* ===========================
+   Theme Toggle
+=========================== */
+
+.theme-btn {
+
+    width: 48px;
+
+    height: 48px;
+
+    border: none;
+
+    border-radius: 50%;
+
+    background: #ffffff;
+
+    color: #29408B;
+
+    cursor: pointer;
+
+    font-size: 20px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .08);
+
+    transition: .3s;
+
+}
+
+.theme-btn:hover {
+
+    transform: translateY(-2px);
+
+    background: #29408B;
+
+    color: white;
+
+}
+
+/*======================================================
+                    DARK MODE
+======================================================*/
+
+body {
+    transition: background .35s, color .35s;
+}
+
+/* Background */
+
+body.dark-mode {
+
+    background: #0f172a;
+    color: #e5e7eb;
+
+}
+
+/* Main Area */
+
+body.dark-mode .main-content {
+
+    background: #0f172a;
+
+}
+
+/* Sidebar */
+
+body.dark-mode .sidebar {
+
+    background: #111827;
+
+    border-right: 1px solid #1f2937;
+
+}
+
+body.dark-mode .logo-tagline {
+
+    color: #d1d5db;
+
+}
+
+body.dark-mode .sidebar-menu a {
+
+    color: #f3f4f6;
+
+}
+
+body.dark-mode .sidebar-menu a:hover {
+
+    background: #1e3a8a;
+
+}
+
+body.dark-mode .sidebar-menu li.active a {
+
+    background: #2563eb;
+
+}
+
+/* Topbar */
+
+body.dark-mode .topbar {
+
+    background: transparent;
+
+}
+
+body.dark-mode .user-greeting {
+
+    color: #cbd5e1;
+
+}
+
+body.dark-mode .username {
+
+    color: #60a5fa;
+
+}
+
+/* Menu Button */
+
+body.dark-mode .menu-btn {
+
+    background: #1f2937;
+
+    color: white;
+
+}
+
+body.dark-mode .menu-btn:hover {
+
+    background: #2563eb;
+
+}
+
+/* Theme Button */
+
+body.dark-mode .theme-btn {
+
+    background: #1f2937;
+
+    color: #facc15;
+
+}
+
+/* Logout */
+
+body.dark-mode .logout-btn {
+
+    background: #2563eb;
+
+}
+
+/* Cards */
+
+body.dark-mode .dashboard-card,
+
+body.dark-mode .report-card,
+
+body.dark-mode .upload-box,
+
+body.dark-mode .chart-card,
+
+body.dark-mode .metric-card {
+
+    background: #1e293b;
+
+    color: #f3f4f6;
+
+    box-shadow: 0 12px 35px rgba(0, 0, 0, .45);
+
+}
+
+/* Headings */
+
+body.dark-mode h1,
+
+body.dark-mode h2,
+
+body.dark-mode h3,
+
+body.dark-mode h4 {
+
+    color: white;
+
+}
+
+/* Paragraph */
+
+body.dark-mode p {
+
+    color: #cbd5e1;
+
+}
+
+/* Tables */
+
+body.dark-mode table {
+
+    background: #1e293b;
+
+    color: white;
+
+}
+
+body.dark-mode th {
+
+    background: #1d4ed8;
+
+    color: white;
+
+}
+
+body.dark-mode td {
+
+    color: #e5e7eb;
+
+    border-color: #334155;
+
+}
+
+body.dark-mode tr {
+
+    border-bottom: 1px solid #334155;
+
+}
+
+body.dark-mode tr:hover {
+
+    background: #273549;
+
+}
+
+/* Search */
+
+body.dark-mode .search-box {
+
+    background: #1e293b;
+
+}
+
+body.dark-mode .search-box input {
+
+    background: #0f172a;
+
+    color: white;
+
+    border: 1px solid #334155;
+
+}
+
+body.dark-mode .search-box input::placeholder {
+
+    color: #94a3b8;
+
+}
+
+body.dark-mode #searchResults {
+
+    background: #1e293b;
+
+    border: 1px solid #334155;
+
+}
+
+body.dark-mode .result-item {
+
+    color: white;
+
+}
+
+body.dark-mode .result-item:hover {
+
+    background: #2563eb;
+
+    color: white;
+
+}
+
+/* Upload Box */
+
+body.dark-mode #dropZone {
+
+    background: #1e293b;
+
+    border: 2px dashed #60a5fa;
+
+}
+
+body.dark-mode #dropZone h3 {
+
+    color: white;
+
+}
+
+body.dark-mode #dropZone p {
+
+    color: #94a3b8;
+
+}
+
+body.dark-mode #fileName {
+
+    color: #60a5fa;
+
+}
+
+/* Inputs */
+
+body.dark-mode input,
+
+body.dark-mode textarea,
+
+body.dark-mode select {
+
+    background: #0f172a;
+
+    color: white;
+
+    border: 1px solid #334155;
+
+}
+
+/* Buttons */
+
+body.dark-mode .primary-btn {
+
+    background: #2563eb;
+
+}
+
+body.dark-mode .primary-btn:hover {
+
+    background: #1d4ed8;
+
+}
+
+body.dark-mode .view-btn {
+
+    background: #2563eb;
+
+}
+
+body.dark-mode .view-btn:hover {
+
+    background: #1d4ed8;
+
+}
+
+body.dark-mode .delete-btn {
+
+    background: #dc2626;
+
+}
+
+body.dark-mode .delete-btn:hover {
+
+    background: #b91c1c;
+
+}
+
+/* Alerts */
+
+body.dark-mode .alert {
+
+    background: #1e293b;
+
+    color: white;
+
+}
+
+/* Charts */
+
+body.dark-mode canvas {
+
+    background: transparent;
+
+}
+
+/* ===============================
+   Dark Mode Dashboard Cards
+================================ */
+
+body.dark-mode .stat-card {
+
+    background: #ffffff;
+
+    color: #111827;
+
+}
+
+body.dark-mode .stat-card h2 {
+
+    color: #111827 !important;
+
+    font-size: 42px;
+
+    font-weight: 700;
+
+}
+
+body.dark-mode .stat-card h3 {
+
+    color: #6b7280 !important;
+
+    font-size: 18px;
+
+    font-weight: 600;
+
+}
+
+/* ===========================
+   DARK MODE - Project Statistics
+=========================== */
+
+body.dark-mode .quality-card {
+
+    background: #1e293b;
+    color: #ffffff;
+    border: 1px solid #334155;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+
+}
+
+body.dark-mode .quality-card h2 {
+
+    color: #ffffff;
+
+}
+
+body.dark-mode .quality-row {
+
+    border-bottom: 1px solid #334155;
+
+}
+
+body.dark-mode .quality-row:last-child {
+
+    border-bottom: none;
+
+}
+
+body.dark-mode .quality-row span {
+
+    color: #cbd5e1;
+
+}
+
+body.dark-mode .quality-row strong {
+
+    color: #60a5fa;
+    font-weight: 700;
+
+}
+
+/* ===========================
+   DARK MODE - Recent Analysis
+=========================== */
+
+body.dark-mode .recent-section {
+
+    background: #1e293b;
+    color: #ffffff;
+    border: 1px solid #334155;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+
+}
+
+body.dark-mode .recent-section h2 {
+
+    color: #ffffff;
+
+}
+
+body.dark-mode .recent-table {
+
+    color: #ffffff;
+
+}
+
+body.dark-mode .recent-table thead {
+
+    background: #2563eb;
+
+}
+
+body.dark-mode .recent-table thead th {
+
+    color: #ffffff;
+
+}
+
+body.dark-mode .recent-table tbody tr {
+
+    background: #1e293b;
+
+}
+
+body.dark-mode .recent-table tbody td {
+
+    color: #e5e7eb;
+    border-bottom: 1px solid #334155;
+
+}
+
+body.dark-mode .recent-table tbody tr:hover {
+
+    background: #273449;
+
 }

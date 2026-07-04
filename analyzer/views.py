@@ -558,3 +558,19 @@ def search_files(request):
         })
 
     return JsonResponse(data,safe=False)
+
+
+from django.contrib import messages
+
+
+def delete_file(request, file_id):
+    file = get_object_or_404(UploadedFile, id = file_id, user=request.user)
+    if request.method == "POST":
+        if file.file and os.path.isfile(file.file.path):
+            os.remove(file.file.path)
+            
+        file.delete()
+        messages.success(request,"File Deleted Successfully.")
+        return redirect("my_files")
+    return redirect("my_files")
+    

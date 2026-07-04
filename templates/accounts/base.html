@@ -106,28 +106,38 @@
 
             <div class="topbar-left">
 
-                <button class="menu-btn" id="menu-toggle"><i class="fa-solid fa-bars"></i></button>
+                <button class="menu-btn" id="menu-toggle">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
 
                 <div class="user-greeting">
 
                     Welcome back,
 
                     <span class="username">
-
                         {{ request.user.username|title }}
-
                     </span>
 
                 </div>
 
             </div>
 
-            <a href="{% url 'logout' %}"
-               class="logout-btn">
+        <div class="topbar-right">
 
-                Logout
+        <button id="themeToggle" class="theme-btn">
 
-            </a>
+            <i class="fa-solid fa-moon"></i>
+
+        </button>
+
+        <a href="{% url 'logout' %}"
+        class="logout-btn">
+
+            Logout
+
+        </a>
+
+    </div>
 
         </div>
 
@@ -144,32 +154,91 @@
 
 <script>
 
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", function(){
 
     const menu = document.getElementById("menu-toggle");
     const sidebar = document.getElementById("sidebar");
     const content = document.getElementById("main-content");
 
-    menu.addEventListener("click", function () {
+    menu.addEventListener("click", function(){
 
-        if (window.innerWidth <= 768) {
+        if(window.innerWidth <= 768){
 
             sidebar.classList.toggle("show");
 
-        } else {
+        }else{
 
             sidebar.classList.toggle("collapsed");
             content.classList.toggle("expanded");
 
         }
 
+        menu.classList.toggle("active");
+
     });
 
-    window.addEventListener("resize", function () {
+    window.addEventListener("resize", function(){
 
-        if (window.innerWidth > 768) {
+        if(window.innerWidth > 768){
 
             sidebar.classList.remove("show");
+
+        }else{
+
+            sidebar.classList.remove("collapsed");
+            content.classList.remove("expanded");
+
+        }
+
+        menu.classList.remove("active");
+
+    });
+
+});
+
+</script>
+
+
+
+
+
+{% block scripts %}
+{% endblock %}
+
+
+<script>
+
+document.addEventListener("DOMContentLoaded",function(){
+
+    const button=document.getElementById("themeToggle");
+
+    const body=document.body;
+
+    if(localStorage.getItem("theme")==="dark"){
+
+        body.classList.add("dark-mode");
+
+        button.innerHTML='<i class="fa-solid fa-sun"></i>';
+
+    }
+
+    button.addEventListener("click",function(){
+
+        body.classList.toggle("dark-mode");
+
+        if(body.classList.contains("dark-mode")){
+
+            localStorage.setItem("theme","dark");
+
+            button.innerHTML='<i class="fa-solid fa-sun"></i>';
+
+        }
+
+        else{
+
+            localStorage.setItem("theme","light");
+
+            button.innerHTML='<i class="fa-solid fa-moon"></i>';
 
         }
 
@@ -178,9 +247,6 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 </script>
-
-{% block scripts %}
-{% endblock %}
 
 </body>
 
