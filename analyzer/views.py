@@ -5,6 +5,7 @@ from django.http import HttpResponse
 import os
 import json
 import ast
+from xml.sax.saxutils import escape
 
 # for pdf
 from reportlab.platypus import (SimpleDocTemplate,Paragraph,Spacer,Table,TableStyle)
@@ -14,6 +15,11 @@ from reportlab.platypus import Image
 from django.conf import settings
 from reportlab.lib.units import inch
 from reportlab.lib.utils import ImageReader
+from django.core.exceptions import ValidationError
+from django.core.mail import BadHeaderError, EmailMultiAlternatives
+from django.core.validators import validate_email
+from smtplib import SMTPException
+import threading
 
 
 from .forms import UploadFileForm
@@ -24,6 +30,43 @@ from .services.security_analyzer import analyze_security
 from django.db.models import Q
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
+
+
+def parse_report_items(value):
+    if not value:
+        return []
+
+    try:
+        parsed = json.loads(value)
+    except (json.JSONDecodeError, TypeError, ValueError):
+        try:
+            parsed = ast.literal_eval(value)
+        except (SyntaxError, ValueError, TypeError):
+            return []
+
+    if isinstance(parsed, list):
+        return parsed
+
+    if isinstance(parsed, dict):
+        return [parsed]
+
+    return []
+
+
+def report_item_value(item, key, default="-"):
+    if not isinstance(item, dict):
+        return default
+
+    value = item.get(key, default)
+
+    if value in (None, ""):
+        return default
+
+    return value
+
+
+def report_item_text(item, key, default="-"):
+    return escape(str(report_item_value(item, key, default)))
 
 
 @login_required
@@ -146,36 +189,14 @@ def report_detail(request, report_id):
     # Security Report
     # ------------------------
 
-    security = []
-
-    if report.security_report:
-        try:
-            security = json.loads(report.security_report)
-        except (json.JSONDecodeError, TypeError, ValueError):
-            try:
-                security = ast.literal_eval(report.security_report)
-            except Exception:
-                security = []
-
-    print(security)
+    security = parse_report_items(report.security_report)
 
 
     # ------------------------
     # Pylint Report
     # ------------------------
 
-    pylint = []
-
-    if report.pylint_json:
-        try:
-            pylint = json.loads(report.pylint_json)
-        except (json.JSONDecodeError, TypeError, ValueError):
-            try:
-                pylint = ast.literal_eval(report.pylint_json)
-            except Exception:
-                pylint = []
-
-    print(pylint)
+    pylint = parse_report_items(report.pylint_json)
 
 
     # ------------------------
@@ -205,9 +226,11 @@ def report_detail(request, report_id):
         "analyzer/report.html",
         context,
     ) 
-       
+    
+from io import BytesIO
 @login_required
 def download_pdf(request, report_id):
+
 
     report = get_object_or_404(
         AnalysisReport,
@@ -215,54 +238,184 @@ def download_pdf(request, report_id):
         uploaded_file__user=request.user,
     )
 
-    response = HttpResponse(content_type="application/pdf")
+    pdf = generate_report_pdf(report)
+
+    response = HttpResponse(
+        pdf,
+        content_type="application/pdf"
+    )
 
     response["Content-Disposition"] = (
         f'attachment; filename="CodeGuard_Report_{report.id}.pdf"'
     )
 
-    doc = SimpleDocTemplate(
-            response,
-            leftMargin=30,
-            rightMargin=30,
-            topMargin=20,
-            bottomMargin=110
+    return response
+
+
+@login_required
+def search_files(request):
+
+    q=request.GET.get("q","")
+
+    files=UploadedFile.objects.filter(
+
+        user=request.user,
+
+        file__icontains=q
+
+    )[:10]
+
+    data=[]
+
+    for file in files:
+
+        report=AnalysisReport.objects.filter(
+
+            uploaded_file=file
+
+        ).first()
+
+        data.append({
+
+            "name":file.file.name.replace("uploads/",""),
+
+            "report_id":report.id if report else None
+
+        })
+
+    return JsonResponse(data,safe=False)
+
+
+def delete_file(request, file_id):
+    file = get_object_or_404(UploadedFile, id = file_id, user=request.user)
+    if request.method == "POST":
+        if file.file and os.path.isfile(file.file.path):
+            os.remove(file.file.path)
+            
+        file.delete()
+        messages.success(request,"File Deleted Successfully.")
+        return redirect("my_files")
+    return redirect("my_files")
+    
+
+
+def send_email_in_background(email_message):
+    try:
+        email_message.send()
+        print("Email sent Successfully.")
+    except Exception as e:
+        print("Email Error : ",e)
+
+
+
+
+
+
+
+    
+@login_required
+def send_report_email(request, report_id):
+    report = get_object_or_404(
+        AnalysisReport,
+        id=report_id,
+        uploaded_file__user=request.user,
+    )
+
+    if request.method != "POST":
+        return redirect("report_detail", report.id)
+
+    email = request.POST.get("email", "").strip()
+
+    try:
+        validate_email(email)
+    except ValidationError:
+        messages.error(request, "Please enter a valid email address.")
+        return redirect("report_detail", report.id)
+
+    subject = "CodeGuard Analysis Report"
+    plain_message = (
+        "Hello,\n\n"
+        "Your source code has been analyzed successfully.\n\n"
+        f"File Name: {report.uploaded_file.file.name}\n"
+        f"Quality Score: {report.pylint_score}/10\n"
+        f"Security Issues: {report.security_issue_count}\n"
+        f"Quality Status: {report.quality_status}\n\n"
+        f"Recommendations:\n{report.recommendations}\n\n"
+        "Thank you for using CodeGuard."
+    )
+    message = f"""
+        <div style="font-family:Segoe UI,Arial,sans-serif;color:#1f2937;line-height:1.6">
+            <h2 style="color:#1e3a8a;margin-bottom:8px">CodeGuard Analysis Report</h2>
+            <p>Hello,</p>
+            <p>Your source code has been analyzed successfully.</p>
+            <table cellpadding="10" cellspacing="0" style="border-collapse:collapse;width:100%;max-width:620px">
+                <tr>
+                    <td style="background:#1e3a8a;color:#fff;font-weight:700">File Name</td>
+                    <td style="background:#f8fafc">{escape(str(report.uploaded_file.file.name))}</td>
+                </tr>
+                <tr>
+                    <td style="background:#1e3a8a;color:#fff;font-weight:700">Quality Score</td>
+                    <td style="background:#f8fafc">{report.pylint_score}/10</td>
+                </tr>
+                <tr>
+                    <td style="background:#1e3a8a;color:#fff;font-weight:700">Security Issues</td>
+                    <td style="background:#f8fafc">{report.security_issue_count}</td>
+                </tr>
+                <tr>
+                    <td style="background:#1e3a8a;color:#fff;font-weight:700">Quality Status</td>
+                    <td style="background:#f8fafc">{escape(str(report.quality_status))}</td>
+                </tr>
+            </table>
+            <h3 style="color:#1e3a8a;margin-top:22px">Recommendations</h3>
+            <p>{escape(str(report.recommendations)).replace(chr(10), "<br>")}</p>
+            <p>Thank you for using CodeGuard.</p>
+        </div>
+    """
+
+    email_message = EmailMultiAlternatives(
+            subject=subject,
+            body=plain_message,
+            to=[email]
         )
+
+    email_message.attach_alternative(message, "text/html")
+    pdf = generate_report_pdf(report)
+
+    email_message.attach(
+        f"CodeGuard_Report_{report.id}.pdf",
+        pdf,
+        "application/pdf")
+    
+    thread = threading.Thread(target=send_email_in_background,args=(email_message,))
+    thread.daemon = True
+
+    thread.start()
+
+    messages.success(request, "📧 Email request received. Your report is being sent in the background.")
+
+    return redirect("report_detail",report.id)
+
+def generate_report_pdf(report):
+
+    buffer = BytesIO()
+    
+
+    doc = SimpleDocTemplate(
+        buffer,
+        leftMargin=30,
+        rightMargin=30,
+        topMargin=170,     # space for banner
+        bottomMargin=110,
+)
 
     styles = getSampleStyleSheet()
 
     heading_style = styles["Heading2"]
     normal_style = styles["BodyText"]
+    pylint_issues = parse_report_items(report.pylint_json)
+    security_issues = parse_report_items(report.security_report)
 
     story = []
-
-    # ==========================================================
-    # Banner
-    # ==========================================================
-
-    header_path = os.path.join(
-        settings.BASE_DIR,
-        "static",
-        "images",
-        "pdf_header.png"
-        )
-
-
-    if os.path.exists(header_path):
-
-        header = Image(
-            header_path,
-            width=doc.width + doc.leftMargin + doc.rightMargin,
-            height=3.0 * inch
-        )
-
-        header.hAlign = "CENTER"
-
-        story.append(header)
-
-        story.append(Spacer(1, 0.40 * inch))
-        
-
 
     # ==========================================================
     # Summary Table
@@ -367,12 +520,12 @@ def download_pdf(request, report_id):
         ["Line", "Code", "Severity", "Description"]
 ]
 
-    for issue in json.loads(report.pylint_json):
+    for issue in pylint_issues:
         quality_data.append([
-            issue["line"],
-            issue["code"],
-            issue["severity"],
-            issue["message"],
+            report_item_value(issue, "line"),
+            report_item_value(issue, "code"),
+            report_item_value(issue, "severity"),
+            Paragraph(report_item_text(issue, "message"), normal_style),
         ])
         
     quality_table = Table(
@@ -398,40 +551,20 @@ def download_pdf(request, report_id):
     story.append(Paragraph("Security Issues", heading_style))
     story.append(Spacer(1,10))
     
-    security_data = [
-    ["Line", "Severity", "Confidence", "CWE", "Description"]]
-    
-    security_data.append([
-    issue.get("line", "-"),
-    issue.get("severity", "-"),
-    issue.get("confidence", "-"),
-    issue.get("cwe", "-"),
-    Paragraph(issue.get("text", "-"), normal_style)
-])
-
-    try:
-        security = json.loads(report.security_report)
-        print(json.dumps(security, indent=4))
-        
-        
-    except:
-        security = []
-        print(json.dumps(security, indent=4))
-    
-    if security:
+    if security_issues:
             security_data = [["Line", "Severity", "CWE", "Description"]]
-            for issue in security:
+            for issue in security_issues:
                 security_data.append([
-                issue.get("line", "-"),
-                issue.get("severity", "-"),
-                issue.get("cwe", "-"),
-                Paragraph(issue.get("text", "-"),normal_style)
+                report_item_value(issue, "line"),
+                report_item_value(issue, "severity"),
+                report_item_value(issue, "cwe"),
+                Paragraph(report_item_text(issue, "text"),normal_style)
             ])
-                security_table = Table(
-                    security_data,
-                    colWidths=[40, 60, 70, 50, 320],
-                    repeatRows=1
-                )
+            security_table = Table(
+                security_data,
+                colWidths=[50, 80, 80, 310],
+                repeatRows=1
+            )
             
             security_table.setStyle(TableStyle([
             ("BACKGROUND",(0,0),(-1,0),colors.HexColor("#B91C1C")),
@@ -474,103 +607,80 @@ def download_pdf(request, report_id):
                 normal_style
             )
         )
-    # ==========================================================
-    # Footer
-    # ==========================================================
-    def draw_footer(canvas, doc):
+# ==========================================================
+# Header & Footer
+# ==========================================================
+
+    def draw_page(canvas, doc):
+
+        page_width, page_height = doc.pagesize
+
+        # ================= HEADER =================
+
+        header_path = os.path.join(
+            settings.BASE_DIR,
+            "static",
+            "images",
+            "pdf_header.png"
+        )
+
+        if os.path.exists(header_path):
+
+            banner_height = 160
+
+            canvas.drawImage(
+                header_path,
+                x=0,
+                y=page_height - banner_height,
+                width=page_width,
+                height=banner_height,
+                preserveAspectRatio=False,
+                mask="auto",
+            )
+
+        # ================= FOOTER =================
 
         footer_path = os.path.join(
-        settings.BASE_DIR,
-        "static",
-        "images",
-        "pdf_footer.png"
+            settings.BASE_DIR,
+            "static",
+            "images",
+            "pdf_footer.png"
         )
 
         if os.path.exists(footer_path):
 
-            footer = ImageReader(footer_path)
+            footer_height = 90
 
-            page_width, page_height = doc.pagesize
-            
-            
-            
             canvas.drawImage(
-                footer,
+                footer_path,
                 x=0,
-                y=10,
-                width = doc.width + doc.leftMargin + doc.rightMargin,
-                height=1.85 * inch,
+                y=0,
+                width=page_width,
+                height=footer_height,
                 preserveAspectRatio=False,
-                mask="auto"
+                mask="auto",
             )
 
-            canvas.saveState()
+        canvas.saveState()
 
-            canvas.setFont("Helvetica", 9)
+        canvas.setFont("Helvetica", 9)
 
-            canvas.drawRightString(
-                page_width - 30,
-                15,
-                f"Page {doc.page}"
-            )
+        canvas.drawRightString(
+            page_width - 30,
+            15,
+            f"Page {doc.page}"
+        )
 
-            canvas.restoreState()
+        canvas.restoreState()
+
 
     doc.build(
-    story,
-    onFirstPage=draw_footer,
-    onLaterPages=draw_footer
-    )
+            story,
+            onFirstPage=draw_page,
+            onLaterPages=draw_page,
+        )
 
-    return response
+    pdf = buffer.getvalue()
+    buffer.close()
 
-
-
-@login_required
-def search_files(request):
-
-    q=request.GET.get("q","")
-
-    files=UploadedFile.objects.filter(
-
-        user=request.user,
-
-        file__icontains=q
-
-    )[:10]
-
-    data=[]
-
-    for file in files:
-
-        report=AnalysisReport.objects.filter(
-
-            uploaded_file=file
-
-        ).first()
-
-        data.append({
-
-            "name":file.file.name.replace("uploads/",""),
-
-            "report_id":report.id if report else None
-
-        })
-
-    return JsonResponse(data,safe=False)
-
-
-from django.contrib import messages
-
-
-def delete_file(request, file_id):
-    file = get_object_or_404(UploadedFile, id = file_id, user=request.user)
-    if request.method == "POST":
-        if file.file and os.path.isfile(file.file.path):
-            os.remove(file.file.path)
-            
-        file.delete()
-        messages.success(request,"File Deleted Successfully.")
-        return redirect("my_files")
-    return redirect("my_files")
-    
+    return pdf

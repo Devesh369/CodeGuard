@@ -3,6 +3,16 @@
 {% extends "accounts/base.html" %}
 
 {% block content %}
+{% if messages %}
+    <div class="message-stack">
+        {% for message in messages %}
+            <div class="alert {{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
 <div class="report-header-card">
 
     <div class="file-info">
@@ -18,8 +28,29 @@
 </div>
 <h1>🧾 Analysis Report  </h1> 
 
-<a class="download-btn" href="{% url 'download_pdf' report.id %}"> ⬇ Download Report </a>
+<div class="report-actions">
 
+    <a href="{% url 'download_pdf' report.id %}"
+       class="download-btn">
+
+        <i class="fa-solid fa-download"></i>
+
+        Download Report
+
+    </a>
+
+    <button
+        type="button"
+        class="email-btn"
+        onclick="openEmailModal()">
+
+        <i class="fa-solid fa-paper-plane"></i>
+
+        Email Report
+
+    </button>
+
+</div>
 <br><br>
 <div class="report-cards">
 
@@ -238,5 +269,99 @@
     </details>
 
 </div>
+
+<!-- ================= EMAIL MODAL ================= -->
+
+<div id="emailModal" class="email-modal" hidden>
+
+    <div class="email-modal-content">
+
+        <span class="close-email"
+              onclick="closeEmailModal()">
+
+            &times;
+
+        </span>
+
+        <h2>
+
+            <i class="fa-solid fa-envelope"></i>
+
+            Send Report
+
+        </h2>
+
+        <p>
+
+            Enter the email address where you want to receive the PDF report.
+
+        </p>
+
+        <form method="POST"
+              action="{% url 'send_report_email' report.id %}">
+
+            {% csrf_token %}
+
+            <input
+                type="email"
+                name="email"
+                placeholder="example@gmail.com"
+                required>
+
+            <button
+                type="submit"
+                class="send-email-btn">
+
+                <i class="fa-solid fa-paper-plane"></i>
+
+                Send Report
+
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+<script>
+
+function openEmailModal(){
+
+    const modal = document.getElementById("emailModal");
+    modal.hidden = false;
+    modal.classList.add("show");
+
+}
+
+function closeEmailModal(){
+
+    const modal = document.getElementById("emailModal");
+    modal.classList.remove("show");
+    modal.hidden = true;
+
+}
+
+window.addEventListener("click",function(e){
+
+    if(e.target.id==="emailModal"){
+
+        closeEmailModal();
+
+    }
+
+});
+
+window.addEventListener("keydown",function(e){
+
+    if(e.key==="Escape"){
+
+        closeEmailModal();
+
+    }
+
+});
+
+</script>
 
 {% endblock %}

@@ -717,15 +717,13 @@ STATUS BADGES
 ========================================================== */
 .status-badge {
 
-    display: inline-flex;
+    display: inline-block;
 
-    align-items: center;
+    padding: 8px 18px;
 
-    padding: 6px 14px;
+    border-radius: 25px;
 
-    border-radius: 50px;
-
-    font-size: 13px;
+    font-size: 14px;
 
     font-weight: 700;
 
@@ -810,14 +808,6 @@ REPORT HEADER
 
     margin-bottom: 30px;
 
-}
-
-.status-badge {
-    display: inline-block;
-    padding: 8px 18px;
-    border-radius: 25px;
-    font-size: 14px;
-    font-weight: 700;
 }
 
 .status-excellent {
@@ -1016,80 +1006,9 @@ UPLOAD PAGE
 
 /* ========================================================== */
 
-.upload-card {
-
-    background: #fff;
-
-    border-radius: 18px;
-
-    padding: 35px;
-
-    box-shadow: var(--shadow);
-
-}
-
-
-/* ========================================================== */
-
-.upload-card h2 {
-
-    color: var(--primary);
-
-    margin-bottom: 25px;
-
-}
-
-
-/* ========================================================== */
-
-.upload-card input[type=file] {
-
-    display: none;
-
-}
-
-
 /* ==========================================================
 DRAG DROP
 ========================================================== */
-
-#dropZone {
-
-    border: 3px dashed var(--primary);
-
-    border-radius: 18px;
-
-    padding: 70px 30px;
-
-    text-align: center;
-
-    cursor: pointer;
-
-    transition: .3s;
-
-    background: #F8FAFC;
-
-}
-
-
-/* ========================================================== */
-
-#dropZone:hover {
-
-    background: #EFF6FF;
-
-}
-
-
-/* ========================================================== */
-
-#dropZone.dragover {
-
-    background: #DBEAFE;
-
-    border-color: #2563EB;
-
-}
 
 
 /* ========================================================== */
@@ -1106,28 +1025,6 @@ DRAG DROP
 
 
 /* ========================================================== */
-
-#dropZone h3 {
-
-    margin-bottom: 15px;
-
-}
-
-
-/* ========================================================== */
-
-#fileName {
-
-    margin-top: 18px;
-
-    font-size: 18px;
-
-    font-weight: 600;
-
-    color: #2563EB;
-
-}
-
 
 /* ==========================================================
 FORMS
@@ -1234,95 +1131,15 @@ ALERTS
 MY FILES
 ========================================================== */
 
-.files-container {
-
-    background: #fff;
-
-    border-radius: 18px;
-
-    padding: 30px;
-
-    box-shadow: var(--shadow);
-
-}
-
-
-/* ========================================================== */
-
-.files-container h2 {
-
-    color: var(--primary);
-
-    margin-bottom: 25px;
-
-}
-
-
-/* ========================================================== */
-
-.file-card {
-
-    display: flex;
-
-    justify-content: space-between;
-
-    align-items: center;
-
-    padding: 20px;
-
-    border-bottom: 1px solid var(--border);
-
-}
-
-
-/* ========================================================== */
-
-.file-card:last-child {
-
-    border: none;
-
-}
-
-
-/* ========================================================== */
-
 .file-info h4 {
 
     margin-bottom: 8px;
 
 }
 
-
-/* ========================================================== */
-
-.file-info p {
-
-    color: var(--text-light);
-
-}
-
-
 /* ==========================================================
 REPORT DETAILS
 ========================================================== */
-
-.report-container {
-
-    max-width: 1200px;
-
-}
-
-
-/* ========================================================== */
-
-.report-status {
-
-    margin: 20px 0;
-
-}
-
-
-/* ========================================================== */
 
 details {
 
@@ -1414,21 +1231,6 @@ tbody tr:hover {
 
 
 /* ==========================================================
-FOOTER
-========================================================== */
-
-.footer {
-
-    text-align: center;
-
-    color: var(--text-light);
-
-    margin-top: 50px;
-
-}
-
-
-/* ==========================================================
 SCROLLBAR
 ========================================================== */
 
@@ -1455,40 +1257,6 @@ SCROLLBAR
 ::-webkit-scrollbar-thumb:hover {
 
     background: #94A3B8;
-
-}
-
-
-/* ==========================================================
-ANIMATION
-========================================================== */
-
-.fade-in {
-
-    animation: fadeIn .5s ease;
-
-}
-
-
-/* ========================================================== */
-
-@keyframes fadeIn {
-
-    from {
-
-        opacity: 0;
-
-        transform: translateY(10px);
-
-    }
-
-    to {
-
-        opacity: 1;
-
-        transform: translateY(0);
-
-    }
 
 }
 
@@ -1651,14 +1419,6 @@ input[type="file"] {
 
 }
 
-.primary-btn:hover {
-
-    background: #1D4ED8;
-
-    transform: translateY(-2px);
-
-}
-
 #fileName {
 
     margin-top: 20px;
@@ -1704,6 +1464,12 @@ input[type="file"] {
     padding: 20px;
 
     box-sizing: border-box;
+
+}
+
+#dropZone:hover {
+
+    background: #EFF6FF;
 
 }
 
@@ -1755,6 +1521,12 @@ SEARCH BAR
 
     align-items: center;
 
+    position: relative;
+
+    width: 100%;
+
+    max-width: 750px;
+
     background: white;
 
     border-radius: 14px;
@@ -1767,7 +1539,15 @@ SEARCH BAR
 
 .search-box i {
 
-    color: #64748B;
+    position: absolute;
+
+    left: 16px;
+
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    color: #7b8499;
 
     font-size: 18px;
 
@@ -1777,7 +1557,15 @@ SEARCH BAR
 
     flex: 1;
 
-    border: none;
+    width: 100%;
+
+    height: 45px;
+
+    padding: 0 20px 0 55px;
+
+    border: 1px solid #D8DCE8;
+
+    border-radius: 14px;
 
     outline: none;
 
@@ -1785,57 +1573,7 @@ SEARCH BAR
 
     margin-left: 15px;
 
-}
-
-.clear-search {
-
-    color: #94A3B8;
-
-    font-size: 20px;
-
-    transition: .3s;
-
-}
-
-.clear-search:hover {
-
-    color: #EF4444;
-
-}
-
-/* ===========================================
-EMPTY SEARCH
-=========================================== */
-
-.empty-search {
-
-    text-align: center;
-
-    padding: 50px;
-
-}
-
-.empty-search i {
-
-    font-size: 55px;
-
-    color: #CBD5E1;
-
-    margin-bottom: 15px;
-
-}
-
-.empty-search h3 {
-
-    margin-bottom: 10px;
-
-    color: #334155;
-
-}
-
-.empty-search p {
-
-    color: #64748B;
+    background: white;
 
 }
 
@@ -1897,37 +1635,6 @@ EMPTY SEARCH
     margin: 25px 0;
 }
 
-.search-box {
-    position: relative;
-    width: 100%;
-    max-width: 750px;
-}
-
-.search-box input {
-    width: 100%;
-
-    height: 45px;
-
-    padding: 0 20px 0 55px;
-
-    border: 1px solid #D8DCE8;
-
-    border-radius: 14px;
-
-    font-size: 16px;
-
-    background: white;
-}
-
-.search-box i {
-    position: absolute;
-    left: 16px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #7b8499;
-}
-
-.searchResults,
 #searchResults {
     position: absolute;
     top: 100%;
@@ -1943,32 +1650,13 @@ EMPTY SEARCH
 
 .result-item {
     display: block;
-    padding: 15px 20px;
+    padding: 15px 18px;
     color: #222;
     text-decoration: none;
-    border-bottom: 1px solid #eee;
-    cursor: pointer;
-    transition: .2s;
-}
-
-.result-item:hover {
-
-    background: #EEF4FF;
-
-}
-
-.result-item {
-
-    padding: 15px 18px;
-
     font-size: 15px;
-
     cursor: pointer;
-
     transition: .2s;
-
     border-bottom: 1px solid #F1F3F8;
-
 }
 
 .result-item:last-child {
@@ -2325,15 +2013,9 @@ body.dark-mode .logout-btn {
 
 /* Cards */
 
-body.dark-mode .dashboard-card,
-
 body.dark-mode .report-card,
 
-body.dark-mode .upload-box,
-
-body.dark-mode .chart-card,
-
-body.dark-mode .metric-card {
+body.dark-mode .chart-card {
 
     background: #1e293b;
 
@@ -2678,5 +2360,323 @@ body.dark-mode .recent-table tbody td {
 body.dark-mode .recent-table tbody tr:hover {
 
     background: #273449;
+
+}
+
+/*==============================
+EMAIL BUTTON
+==============================*/
+
+.report-actions {
+
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 18px;
+
+    margin-bottom: 35px;
+
+}
+
+.email-btn {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 10px;
+
+    background: #2563eb;
+
+    color: white;
+
+    border: none;
+
+    padding: 15px 28px;
+
+    border-radius: 12px;
+
+    font-size: 16px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: .3s;
+
+    box-shadow: 0 10px 25px rgba(37, 99, 235, .22);
+
+}
+
+.email-btn:hover {
+
+    background: #1d4ed8;
+
+    transform: translateY(-3px);
+
+}
+
+/*==============================
+EMAIL POPUP
+==============================*/
+
+.email-modal {
+
+    display: none;
+
+    position: fixed;
+
+    inset: 0;
+
+    background: rgba(15, 23, 42, .62);
+
+    justify-content: center;
+
+    align-items: center;
+
+    padding: 24px;
+
+    z-index: 999999;
+
+}
+
+.email-modal[hidden] {
+
+    display: none !important;
+
+}
+
+.email-modal.show {
+
+    display: flex;
+
+}
+
+.email-modal-content {
+
+    width: min(100%, 460px);
+
+    background: #ffffff;
+
+    border-radius: 18px;
+
+    padding: 34px;
+
+    position: relative;
+
+    box-shadow: 0 24px 70px rgba(0, 0, 0, .28);
+
+}
+
+.email-modal-content h2 {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    color: #1e3a8a;
+
+    font-size: 28px;
+
+    margin-bottom: 14px;
+
+}
+
+.email-modal-content p {
+
+    color: #64748b;
+
+    line-height: 1.6;
+
+    margin-bottom: 22px;
+
+}
+
+.email-modal-content form {
+
+    display: grid;
+
+    gap: 16px;
+
+}
+
+.email-modal-content input[type="email"] {
+
+    width: 100%;
+
+    min-height: 48px;
+
+    border: 1px solid #d8dce8;
+
+    border-radius: 12px;
+
+    padding: 0 16px;
+
+    font-size: 16px;
+
+    outline: none;
+
+    transition: .25s;
+
+}
+
+.email-modal-content input[type="email"]:focus {
+
+    border-color: #2563eb;
+
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, .14);
+
+}
+
+.send-email-btn {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 10px;
+
+    min-height: 48px;
+
+    border: none;
+
+    border-radius: 12px;
+
+    background: #16a34a;
+
+    color: #ffffff;
+
+    font-size: 16px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: .25s;
+
+}
+
+.send-email-btn:hover {
+
+    background: #15803d;
+
+    transform: translateY(-2px);
+
+}
+
+.close-email {
+
+    position: absolute;
+
+    top: 16px;
+
+    right: 20px;
+
+    width: 34px;
+
+    height: 34px;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 50%;
+
+    color: #64748b;
+
+    font-size: 28px;
+
+    line-height: 1;
+
+    cursor: pointer;
+
+    transition: .2s;
+
+}
+
+.close-email:hover {
+
+    background: #fee2e2;
+
+    color: #dc2626;
+
+}
+
+.message-stack {
+
+    margin-bottom: 24px;
+
+}
+
+body.dark-mode .email-modal-content {
+
+    background: #1e293b;
+
+    color: #e5e7eb;
+
+    border: 1px solid #334155;
+
+}
+
+body.dark-mode .email-modal-content h2 {
+
+    color: #93c5fd;
+
+}
+
+body.dark-mode .email-modal-content p,
+body.dark-mode .close-email {
+
+    color: #cbd5e1;
+
+}
+
+body.dark-mode .email-modal-content input[type="email"] {
+
+    background: #0f172a;
+
+    color: #ffffff;
+
+    border-color: #334155;
+
+}
+
+@media(max-width:576px) {
+
+    .report-actions {
+
+        display: grid;
+
+        grid-template-columns: 1fr;
+
+    }
+
+    .report-actions .download-btn,
+    .email-btn {
+
+        width: 100%;
+
+    }
+
+    .email-modal {
+
+        padding: 16px;
+
+    }
+
+    .email-modal-content {
+
+        padding: 28px 22px;
+
+    }
 
 }
