@@ -1,267 +1,251 @@
-{% extends 'accounts/base.html' %}
+{% extends "accounts/base.html" %}
 
 {% block content %}
+
 <div class="files-page">
-<h1>
-    My Uploaded Files
-</h1>
 
+    <div class="page-header">
 
-<div class="search-container">
+        <h1>
+            📁 My Projects
+        </h1>
 
-    <form method="GET">
+        <p>
+            Browse your analyzed Python projects and open detailed reports.
+        </p>
 
-        <div class="search-box">
+    </div>
 
-            <i class="fa-solid fa-magnifying-glass"> </i> 
+    <div class="search-container">
 
-            &nbsp;&nbsp; <input
+        <form method="GET">
+
+            <input
                 type="text"
-                id="searchInput"
-                placeholder="Search files..."
-                autocomplete="off">
+                name="q"
+                value="{{ query }}"
+                placeholder="Search Project..."
+                class="search-input">
 
-            <div id="searchResults"></div>
+            <button class="search-btn">
 
+                <i class="fa-solid fa-search"></i>
 
-            
-        </div>
+            </button>
 
-    </form>
-<br>
-</div>
-<table class="files-table">
+        </form>
 
-    <colgroup>
-        <col style="width:40%">
-        <col style="width:18%">
-        <col style="width:22%">
-        <col style="width:20%">
-    </colgroup>
+    </div>
 
-    <thead>
+    {% if projects %}
 
-        <tr>
+    <div class="project-grid">
 
-            <th>File</th>
-            <th>Status</th>
-            <th>Uploaded</th>
-            <th>Report</th>
+        {% for project in projects %}
 
-        </tr>
+        <div class="project-card">
 
-    </thead>
+            <div class="project-top">
 
-    <tbody>
+                <h2>
 
-    {% for file in files %}
+                    {{ project.name }}
 
-    <tr>
+                </h2>
 
-        <td class="file-column">
-            {{ file.file.name|cut:"uploads/" }}
-        </td>
+                <span class="score-badge">
 
-        <td>
-
-            {% if file.analysisreport %}
-
-                <span class="status-badge status-good">
-
-                    Analyzed
+                    {{ project.avg_score }}/10
 
                 </span>
 
-            {% else %}
+            </div>
 
-                <span class="status-badge status-warning">
+            <div class="project-stats">
 
-                    Pending
+                <div>
 
-                </span>
+                    <strong>
 
-            {% endif %}
+                        {{ project.file_count }}
 
-        </td>
+                    </strong>
 
-        <td>
+                    Files
 
-            {{ file.uploaded_At|date:"d M Y, h:i A" }}
+                </div>
 
-        </td>
+                <div>
 
-        <td class="action-column">
+                    <strong>
 
-            {% if file.analysisreport %}
+                        {{ project.total_issues }}
 
-                <a href="{% url 'report_detail' file.analysisreport.id %}"
-                   class="view-btn">
+                    </strong>
 
-                    <i class="fa-solid fa-eye"></i>
+                    Issues
+
+                </div>
+
+                <div>
+
+                    <strong>
+
+                        {{ project.total_security_issues }}
+
+                    </strong>
+
+                    Security
+
+                </div>
+
+            </div>
+
+            <div class="project-date">
+
+                Uploaded
+
+                {{ project.created_at|date:"d M Y h:i A" }}
+
+            </div>
+
+            <div class="project-actions">
+
+                <a
+
+                    href="{% url 'project_report' project.id %}"
+
+                    class="view-btn">
+
+                    <i class="fa-solid fa-chart-column"></i>
 
                     View Report
 
                 </a>
-        {% endif %}
-            <button type='button' class="delete-btn" onclick= "confirmDelete('{{ file.id }}', '{{file.file.name|cut:'uploads/'}}')">
-                <i class="fa-solid fa-trash"></i>
-                Delete
-            </button>
-                    
 
-        </td>
+                <button
 
-    </tr>
+                    class="delete-btn"
 
-    {% endfor %}
+                    onclick="confirmDelete('{{ project.id }}','{{ project.name }}')">
 
-    </tbody>
+                    <i class="fa-solid fa-trash"></i>
 
-</table>
+                    Delete
 
+                </button>
 
+            </div>
 
-<script>
+        </div>
 
+        {% endfor %}
 
-document.addEventListener("DOMContentLoaded", function () {
+    </div>
 
-    const input = document.getElementById("searchInput");
-    const results = document.getElementById("searchResults");
+    {% else %}
 
-    input.addEventListener("keyup", function () {
+    <div class="empty-project">
 
-        const q = this.value.trim();
+        <i class="fa-solid fa-folder-open"></i>
 
-        if (q === "") {
-            results.innerHTML = "";
-            results.style.display = "none";
-            return;
-        }
+        <h2>
 
-        fetch("/search_files/?q=" + encodeURIComponent(q))
+            No Projects Uploaded
 
-        .then(response => response.json())
+        </h2>
 
-        .then(data => {
+        <p>
 
-            results.innerHTML = "";
+            Upload your first Python project to start analysis.
 
-            if (data.length === 0) {
+        </p>
 
-                results.style.display = "none";
-                return;
+        <a href="{% url 'upload_file' %}" class="primary-btn">
 
-            }
+            Upload Project
 
-            results.style.display = "block";
+        </a>
 
-            data.forEach(function(file){
+    </div>
 
-                const item = document.createElement("a");
+    {% endif %}
 
-                item.className = "result-item";
+</div>
 
-                item.textContent = file.name;
+<!-- Delete Modal -->
 
-                if(file.report_id){
-
-                    item.href = "/report/" + file.report_id + "/";
-
-                }else{
-
-                    item.href = "#";
-
-                    item.addEventListener("click",function(e){
-
-                        e.preventDefault();
-
-                        alert("This file has not been analyzed yet.");
-
-                    });
-
-                }
-
-                results.appendChild(item);
-
-            });
-
-        });
-
-    });
-
-    document.addEventListener("click",function(e){
-
-        if(!e.target.closest(".search-container")){
-
-            results.style.display="none";
-
-        }
-
-    });
-
-});
-
-</script>
 <div id="deleteModal" class="modal">
 
     <div class="modal-content">
 
-        <span class="close-modal" onclick="closeModal()">&times;</span>
+        <span
 
-        <h2 class="delete-title">
+            class="close-modal"
 
-            <i class="fa-solid fa-trash"></i>
+            onclick="closeModal()">
 
-            Delete File
+            &times;
+
+        </span>
+
+        <h2>
+
+            Delete Project
 
         </h2>
 
         <p id="deleteText"></p>
 
-        <div class="modal-buttons">
+        <form
 
-            <button
-                type="button"
-                class="cancel-btn"
-                onclick="closeModal()">
+            id="deleteForm"
 
-                Cancel
+            method="POST">
 
-            </button>
+            {% csrf_token %}
 
-            <form id="deleteForm" method="POST">
-
-                {% csrf_token %}
+            <div class="modal-buttons">
 
                 <button
+
+                    type="button"
+
+                    class="cancel-btn"
+
+                    onclick="closeModal()">
+
+                    Cancel
+
+                </button>
+
+                <button
+
                     type="submit"
+
                     class="confirm-delete-btn">
 
                     Delete
 
                 </button>
 
-            </form>
+            </div>
 
-        </div>
+        </form>
 
     </div>
 
 </div>
+
 <script>
 
 function confirmDelete(id,name){
 
-    document.getElementById("deleteText").innerHTML =
-        `
-        This action cannot be undone.<br><br>
-        Are you sure you want to delete
-        <strong>${name}</strong> ?
-        `;
+    document.getElementById("deleteText").innerHTML=
 
-    document.getElementById("deleteForm").action =
-        "/delete_file/" + id + "/";
+    "Delete project <strong>"+name+"</strong>?<br><br>This will remove all uploaded files and reports.";
+
+    document.getElementById("deleteForm").action="/delete_project/"+id+"/";
 
     document.getElementById("deleteModal").style.display="flex";
 
@@ -284,5 +268,5 @@ window.onclick=function(e){
 }
 
 </script>
-</div>
+
 {% endblock %}

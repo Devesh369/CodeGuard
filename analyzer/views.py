@@ -2,6 +2,7 @@ from django.shortcuts import render , redirect ,get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponse
+from django.core.files import File
 import os
 import json
 import ast
@@ -22,14 +23,23 @@ from smtplib import SMTPException
 import threading
 
 
-from .forms import UploadFileForm
-from .models import UploadedFile , AnalysisReport
+
+from .forms import UploadProjectForm
+from .models import Project, UploadedFile, AnalysisReport
 from .services.code_analyzer import (analyze_python_file)
 from .services.security_analyzer import analyze_security
 
-from django.db.models import Q
+from django.db.models import Q, Avg
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
+from analyzer.services.ai_review import generate_ai_review
+from analyzer.services.ai_fix import generate_ai_fix, summarize_ai_changes
+import traceback
+import zipfile
+import tempfile
+import shutil
+
+from .models import Project
 
 
 def parse_report_items(value):
@@ -74,68 +84,562 @@ def upload_file(request):
 
     if request.method == "POST":
 
-        form = UploadFileForm(request.POST, request.FILES)
-
-        print("FILES:", request.FILES)
+        form = UploadProjectForm(request.POST, request.FILES)
 
         if form.is_valid():
 
-            print("FORM VALID")
-
             try:
 
-                upload = form.save(commit=False)
-                upload.user = request.user
-                upload.save()
+                # ==========================================
+                # Create Project
+                # ==========================================
 
-                print("File Saved")
+                project = Project.objects.create(
 
-                analysis = analyze_python_file(upload.file.path)
-                print("Pylint Done")
+                    user=request.user,
 
-                security = analyze_security(upload.file.path)
-                print("Bandit Done")
+                    name=form.cleaned_data["project_name"],
 
-                AnalysisReport.objects.create(
-                    uploaded_file=upload,
-                    pylint_score=analysis["score"],
-                    pylint_report=analysis["report"],
-                    pylint_json=json.dumps(
-                        analysis["pylint_issues"],
-                        indent=4
-                    ),
-                    quality_status=analysis["quality"],
-                    issue_count=analysis["issues"],
-                    recommendations="\n".join(
-                        analysis["recommendations"]
-                    ),
-                    security_issue_count=security["issue_count"],
-                    security_report=json.dumps(
-                        security["issues"],
-                        indent=4
-                    ),
                 )
 
-                print("Report Saved")
+                uploaded_files = []
 
-                upload.status = "Analyzed"
-                upload.save()
+                # ==========================================
+                # ZIP Upload
+                # ==========================================
 
-                filename = os.path.basename(upload.file.name)
+                zip_file = form.cleaned_data.get("zip_file")
+
+                if zip_file:
+
+                    temp_dir = tempfile.mkdtemp()
+
+                    zip_path = os.path.join(
+                        temp_dir,
+                        zip_file.name
+                    )
+
+                    with open(zip_path, "wb+") as destination:
+
+                        for chunk in zip_file.chunks():
+
+                            destination.write(chunk)
+
+                    with zipfile.ZipFile(zip_path, "r") as archive:
+
+                        archive.extractall(temp_dir)
+
+                    ignored_dirs = {
+
+                        "__pycache__",
+                        ".git",
+                        ".github",
+                        "venv",
+                        ".venv",
+                        "env",
+                        "node_modules",
+                        "migrations",
+
+                    }
+
+                    for root, dirs, files in os.walk(temp_dir):
+
+                        dirs[:] = [
+
+                            d for d in dirs
+
+                            if d not in ignored_dirs
+
+                        ]
+
+                        for filename in files:
+
+                            if not filename.endswith(".py"):
+
+                                continue
+
+                            full_path = os.path.join(
+
+                                root,
+
+                                filename
+
+                            )
+
+                            relative_path = os.path.relpath(
+
+                                full_path,
+
+                                temp_dir
+
+                            )
+
+                            with open(full_path, "rb") as fp:
+
+                                django_file = File(
+
+                                    fp,
+
+                                    name=filename
+
+                                )
+
+                                upload = UploadedFile.objects.create(
+
+                                    project=project,
+
+                                    user=request.user,
+
+                                    file=django_file,
+
+                                    original_name=filename,
+
+                                    relative_path=relative_path,
+
+                                    file_size=os.path.getsize(full_path),
+
+                                    language="Python",
+
+                                    status="Pending",
+
+                                )
+
+                                uploaded_files.append(upload)
+
+                    shutil.rmtree(temp_dir)
+
+                # ==========================================
+                # Single / Multiple Python Files
+                # ==========================================
+
+                else:
+
+                    python_files = request.FILES.getlist("files")
+
+                    for f in python_files:
+
+                        upload = UploadedFile.objects.create(
+
+                            project=project,
+
+                            user=request.user,
+
+                            file=f,
+
+                            original_name=f.name,
+
+                            relative_path=f.name,
+
+                            file_size=f.size,
+
+                            language="Python",
+
+                            status="Pending",
+
+                        )
+
+                        uploaded_files.append(upload)
+
+                # ==========================================
+                # Nothing Uploaded
+                # ==========================================
+
+                if not uploaded_files:
+
+                    project.delete()
+
+                    messages.error(
+
+                        request,
+
+                        "No Python files found."
+
+                    )
+
+                    return redirect("upload_file")
+
+                print("=" * 70)
+                print("PROJECT CREATED :", project.name)
+                print("TOTAL FILES :", len(uploaded_files))
+
+                for item in uploaded_files:
+
+                    print(item.file.name)
+
+                print("=" * 70)
+
+                # =====================================================
+                # PART 2 STARTS FROM HERE
+                # uploaded_files contains every Python file
+                # =====================================================
+
+                total_pylint_score = 0
+                total_pylint_issues = 0
+                total_security_issues = 0
+
+                for upload in uploaded_files:
+
+                    print("=" * 80)
+                    print("Analyzing :", upload.file.name)
+                    print("=" * 80)
+
+                    # =====================================
+                    # Run Pylint
+                    # =====================================
+
+                    analysis = analyze_python_file(upload.file.path)
+
+                    print("Pylint Completed")
+
+                    # =====================================
+                    # Run Bandit
+                    # =====================================
+
+                    security = analyze_security(upload.file.path)
+
+                    print("Bandit Completed")
+
+                    # =====================================
+                    # Read Source Code
+                    # =====================================
+
+                    with open(
+                        upload.file.path,
+                        "r",
+                        encoding="utf-8"
+                    ) as f:
+
+                        source_code = f.read()
+
+                    # =====================================
+                    # AI Review + AI Fix
+                    # =====================================
+
+                    try:
+
+                        ai = generate_ai_review(
+
+                            source_code,
+
+                            analysis["report"],
+
+                            json.dumps(
+                                security["issues"],
+                                indent=4
+                            )
+
+                        )
+
+                        fix = generate_ai_fix(
+
+                            source_code,
+
+                            analysis["report"],
+
+                            json.dumps(
+                                security["issues"],
+                                indent=4
+                            )
+
+                        )
+
+                    except Exception as e:
+
+                        print("=" * 80)
+                        print("AI ERROR")
+                        print(e)
+                        traceback.print_exc()
+                        print("=" * 80)
+
+                        ai = {
+
+                            "overall_score": 0,
+
+                            "summary": "AI review unavailable.",
+
+                            "strengths": [],
+
+                            "weaknesses": [],
+
+                            "suggestions": [],
+
+                            "security": "Unknown",
+
+                            "maintainability": 0,
+
+                            "readability": 0,
+
+                        }
+
+                        fix = {
+
+                            "changes": [],
+
+                            "fixed_code": "",
+
+                            "explanation": "AI Fix unavailable."
+
+                        }
+
+                    # =====================================
+                    # Save Analysis Report
+                    # =====================================
+
+                    AnalysisReport.objects.create(
+
+                        uploaded_file=upload,
+
+                        pylint_score=analysis["score"],
+
+                        pylint_report=analysis["report"],
+
+                        pylint_json=json.dumps(
+
+                            analysis["pylint_issues"],
+
+                            indent=4
+
+                        ),
+
+                        quality_status=analysis["quality"],
+
+                        issue_count=analysis["issues"],
+
+                        recommendations=analysis["recommendations"],
+
+                        security_level=security.get(
+                            "security_level",
+                            "Safe"
+                        ),
+
+                        security_issue_count=security["issue_count"],
+
+                        security_report=json.dumps(
+
+                            security["issues"],
+
+                            indent=4
+
+                        ),
+
+                        ai_score=ai.get(
+                            "overall_score",
+                            0
+                        ),
+
+                        ai_summary=ai.get(
+                            "summary",
+                            ""
+                        ),
+
+                        ai_strengths=ai.get(
+                            "strengths",
+                            []
+                        ),
+
+                        ai_weaknesses=ai.get(
+                            "weaknesses",
+                            []
+                        ),
+
+                        ai_suggestions=ai.get(
+                            "suggestions",
+                            []
+                        ),
+
+                        ai_security=ai.get(
+                            "security",
+                            "Unknown"
+                        ),
+
+                        maintainability_score=ai.get(
+                            "maintainability",
+                            0
+                        ),
+
+                        readability_score=ai.get(
+                            "readability",
+                            0
+                        ),
+
+                        ai_changes=fix.get(
+                            "changes",
+                            []
+                        ),
+
+                        ai_fixed_code=fix.get(
+                            "fixed_code",
+                            ""
+                        ),
+
+                        ai_fix_explanation=fix.get(
+                            "explanation",
+                            ""
+                        ),
+
+                    )
+
+                    upload.status = "Analyzed"
+
+                    upload.save()
+
+                    total_pylint_score += float(
+                        analysis["score"]
+                    )
+
+                    total_pylint_issues += analysis["issues"]
+
+                    total_security_issues += security["issue_count"]
+                    
+                # =====================================
+                # PROJECT SUMMARY
+                # =====================================
+
+                total_files = len(uploaded_files)
+
+                if total_files > 0:
+
+                    overall_score = round(
+                        total_pylint_score / total_files,
+                        2
+                    )
+
+                else:
+
+                    overall_score = 0
+
+                # =====================================
+                # Generate Project AI Summary
+                # =====================================
+
+                try:
+
+                    all_reports = []
+
+                    for report in AnalysisReport.objects.filter(
+                        uploaded_file__project=project
+                    ):
+
+                        all_reports.append(
+
+                            f"""
+                            File : {report.uploaded_file.original_name}
+
+                            Pylint Score : {report.pylint_score}
+
+                            AI Summary :
+                            {report.ai_summary}
+
+                            Security Issues :
+                            {report.security_issue_count}
+
+                            """
+
+                        )
+
+                    project_review = generate_ai_review(
+
+                        "\n\n".join(all_reports),
+
+                        "",
+
+                        ""
+
+                    )
+
+                    project.project_summary = project_review.get(
+
+                        "summary",
+
+                        ""
+
+                    )
+
+                    project.top_improvements = project_review.get(
+
+                        "suggestions",
+
+                        []
+
+                    )
+
+                    project.overall_suggestions = project_review.get(
+
+                        "suggestions",
+
+                        []
+
+                    )
+
+                    project.code_smells = project_review.get(
+
+                        "weaknesses",
+
+                        []
+
+                    )
+
+                except Exception as e:
+
+                    print("=" * 80)
+                    print("PROJECT AI ERROR")
+                    print(e)
+                    traceback.print_exc()
+                    print("=" * 80)
+
+                    project.project_summary = "Project summary unavailable."
+
+                # =====================================
+                # Save Project Statistics
+                # =====================================
+
+                project.overall_score = overall_score
+
+                project.total_issues = total_pylint_issues
+
+                project.total_security_issues = total_security_issues
+
+                project.save()
+
+                # =====================================
+                # Success Message
+                # =====================================
 
                 messages.success(
-                    request,
-                    f"{filename} uploaded successfully."
-                )
 
-                print("Redirecting")
+                    request,
+
+                    f"""
+                    Project '{project.name}' analyzed successfully.
+
+                    Files : {total_files}
+
+                    Pylint Issues : {total_pylint_issues}
+
+                    Security Issues : {total_security_issues}
+
+                    Overall Score : {overall_score}/10
+                    """
+
+                )
 
                 return redirect("my_files")
 
             except Exception as e:
 
-                print("ERROR OCCURRED")
+                print("=" * 80)
+                print("UPLOAD ERROR")
                 print(e)
+                traceback.print_exc()
+                print("=" * 80)
+
+                messages.error(
+
+                    request,
+
+                    f"Upload Failed : {e}"
+
+                )
 
         else:
 
@@ -143,40 +647,81 @@ def upload_file(request):
 
     else:
 
-        form = UploadFileForm()
+        form = UploadProjectForm()
 
     return render(
+
         request,
+
         "analyzer/upload.html",
-        {"form": form}
-    )
+
+        {
+
+            "form": form
+
+        }
+
+    )                    
+
+
 
 
 
 
 @login_required
 def my_files(request):
-    query = request.GET.get("q", "")
-    files = UploadedFile.objects.filter(user=request.user)
-    if query:
-        files = files.filter(
 
-        Q(file__icontains=query) |
+    query = request.GET.get("q", "").strip()
 
-        Q(analysisreport__quality_status__icontains=query)
-
-        ).distinct()
-    context = {
-        "files": files,
-        "query": query,
-    }
-        
-    return render(
-        request,
-        "analyzer/my_files.html",
-        context,
+    projects = Project.objects.filter(
+        user=request.user
     )
 
+    if query:
+
+        projects = projects.filter(
+
+            Q(name__icontains=query)
+
+        )
+
+    for project in projects:
+
+        project.file_count = project.files.count()
+
+        project.avg_score = round(
+
+            project.files.filter(
+
+                analysis__isnull=False
+
+            ).aggregate(
+
+                avg=Avg("analysis__pylint_score")
+
+            )["avg"] or 0,
+
+            2
+
+        )
+
+    context = {
+
+        "projects": projects,
+
+        "query": query,
+
+    }
+
+    return render(
+
+        request,
+
+        "analyzer/my_files.html",
+
+        context,
+
+    )
 
 @login_required
 def report_detail(request, report_id):
@@ -213,11 +758,37 @@ def report_detail(request, report_id):
     # Context
     # ------------------------
 
+    source_code = ""
+    if report.uploaded_file and report.uploaded_file.file:
+        try:
+            with open(report.uploaded_file.file.path, "r", encoding="utf-8") as handle:
+                source_code = handle.read()
+        except Exception:
+            source_code = ""
+
+    summary_changes = []
+    if report.ai_changes:
+        try:
+            summary_changes = summarize_ai_changes(report.ai_changes)
+        except Exception:
+            summary_changes = []
+
+    fix_data = {"explanation": "", "fixed_code": ""}
+    if report.ai_fix_explanation:
+        try:
+            fix_data = json.loads(report.ai_fix_explanation)
+        except Exception:
+            fix_data = {"explanation": report.ai_fix_explanation, "fixed_code": ""}
+
     context = {
         "report": report,
         "security": security,
         "pylint": pylint,
         "recommendations": recommendations,
+        "source_code": source_code,
+        "summary_changes": summary_changes,
+        "fix_explanation": fix_data.get("explanation", ""),
+        "fixed_code": fix_data.get("fixed_code", ""),
     }
 
 
@@ -286,17 +857,44 @@ def search_files(request):
     return JsonResponse(data,safe=False)
 
 
-def delete_file(request, file_id):
-    file = get_object_or_404(UploadedFile, id = file_id, user=request.user)
+@login_required
+def delete_project(request, project_id):
+
+    project = get_object_or_404(
+
+        Project,
+
+        id=project_id,
+
+        user=request.user
+
+    )
+
     if request.method == "POST":
-        if file.file and os.path.isfile(file.file.path):
-            os.remove(file.file.path)
-            
-        file.delete()
-        messages.success(request,"File Deleted Successfully.")
-        return redirect("my_files")
+
+        # Delete every uploaded file from disk
+        for uploaded_file in project.files.all():
+
+            if uploaded_file.file and os.path.isfile(uploaded_file.file.path):
+
+                os.remove(uploaded_file.file.path)
+
+        # Delete project
+        # (UploadedFile and AnalysisReport will be deleted automatically
+        # because of CASCADE relationships.)
+
+        project.delete()
+
+        messages.success(
+
+            request,
+
+            "Project deleted successfully."
+
+        )
+
     return redirect("my_files")
-    
+
 
 
 def send_email_in_background(email_message):
@@ -305,9 +903,6 @@ def send_email_in_background(email_message):
         print("Email sent Successfully.")
     except Exception as e:
         print("Email Error : ",e)
-
-
-
 
 
 
@@ -684,3 +1279,6 @@ def generate_report_pdf(report):
     buffer.close()
 
     return pdf
+
+
+

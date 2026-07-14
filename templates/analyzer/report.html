@@ -115,17 +115,155 @@
 
 <h3>💡 Recommendations</h3>
 
-
 <ul class="recommendation-list">
 
     {% for item in recommendations %}
 
         <li>{{ item }}</li>
 
+    {% empty %}
+        <li>No recommendations available.</li>
     {% endfor %}
 
 </ul>
 </div>
+
+<!-- ================================================= -->
+<!-- 🤖 AI FIX SUGGESTIONS -->
+<!-- ================================================= -->
+
+<div class="ai-fix-section">
+
+    <div class="ai-fix-title">
+
+        <h2>
+            ✨ AI Suggested Fixes
+        </h2>
+
+        <p>
+            AI analyzed your code and generated the most important fix recommendations.
+        </p>
+
+    </div>
+
+    <div class="suggestion-box">
+        <h3>✨ AI Suggested Fixes</h3>
+        <ul>
+            {% for item in report.ai_suggestions %}
+                <li>{{ item }}</li>
+            {% empty %}
+                <li>No AI suggestions were generated.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    {% if summary_changes %}
+    <div class="suggestion-box">
+        <h3>🧩 Improvement Suggestions</h3>
+        <ul>
+            {% for item in summary_changes %}
+                <li>
+                    <strong>{{ item.issue }}</strong>
+                    {% if item.count > 1 %}
+                        <span> — found {{ item.count }} times</span>
+                    {% endif %}
+                    {% if item.lines %}
+                        <div>Lines: {{ item.lines|join:", " }}</div>
+                    {% endif %}
+                    {% if item.reason %}
+                        <div>{{ item.reason }}</div>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+</div>
+
+<div class="ai-fix-section">
+
+    <div class="ai-fix-title">
+
+        <h2>
+            ✨ AI Suggested Fixes
+        </h2>
+
+        <p>
+            This section contains the targeted AI improvements and the generated fixed code.
+        </p>
+
+    </div>
+
+    {% if report.ai_suggestions %}
+    <div class="suggestion-box">
+        <h3>AI Suggestions</h3>
+        <ul>
+            {% for item in report.ai_suggestions %}
+                <li>{{ item }}</li>
+            {% empty %}
+                <li>No AI suggestions were generated.</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% if summary_changes %}
+    <div class="suggestion-box">
+        <h3>Improvement Suggestions</h3>
+        <ul>
+            {% for item in summary_changes %}
+                <li>
+                    <strong>{{ item.issue }}</strong>
+                    {% if item.count > 1 %}
+                        <span> — found {{ item.count }} times</span>
+                    {% endif %}
+                    {% if item.lines %}
+                        <div>Lines: {{ item.lines|join:", " }}</div>
+                    {% endif %}
+                    {% if item.reason %}
+                        <div>{{ item.reason }}</div>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <div class="ai-final-summary">
+
+        <h3>
+            📝 AI Explanation
+        </h3>
+
+        <div class="explanation-text">
+            {{ fix_explanation|linebreaks }}
+        </div>
+
+    </div>
+
+</div>
+
+{% if fixed_code %}
+<div class="report-card fixed-code-section" style="margin-top: 24px;">
+    <h3>📄 AI Generated Fixed Code</h3>
+    <p class="score-text">Copy the complete fixed code below.</p>
+    <pre id="fullCodePreview" class="fixed-code-preview">{{ fixed_code }}</pre>
+    <button class="copy-small" onclick="copyFix('fullCodePreview')">📋 Copy Fixed Code</button>
+</div>
+{% endif %}
+
+
+<div class="report-card" style="margin-top: 24px;">
+    <h3>📄 Full File Code</h3>
+    <p class="score-text">Copy the full code from below if you want to review or reuse it.</p>
+    <pre id="fullCodePreview" style="margin-top: 16px;">{{ source_code }}</pre>
+    <button class="copy-small" onclick="copyFix('fullCodePreview')">📋 Copy Full Code</button>
+</div>
+
+
+
+
 <br>
 <div class="report-card">
 
@@ -362,6 +500,30 @@ window.addEventListener("keydown",function(e){
 
 });
 
+function copyFix(id){
+
+    const text = document.getElementById(id).innerText;
+
+    navigator.clipboard.writeText(text);
+
+    alert("Suggested fix copied!");
+
+}
+function toggleFix(id){
+
+    const box = document.getElementById(id);
+
+    if(box.style.display==="none"){
+
+        box.style.display="block";
+
+    }else{
+
+        box.style.display="none";
+
+    }
+
+}
 </script>
 
 {% endblock %}

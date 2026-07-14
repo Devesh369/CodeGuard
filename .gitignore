@@ -25,3 +25,6 @@ staticfiles/
 
 # Environment Variables
 .env
+
+#api key
+.env

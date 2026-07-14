@@ -12,7 +12,16 @@
 
 <div class="upload-page">
 
-    <h1>Upload Source Code</h1>
+    <div class="upload-header">
+
+        <h1>📦 Upload Python Project</h1>
+
+        <p>
+            Upload a complete ZIP project or one/multiple Python files for
+            AI-powered code quality and security analysis.
+        </p>
+
+    </div>
 
     <form method="POST"
           enctype="multipart/form-data"
@@ -21,34 +30,121 @@
         {% csrf_token %}
 
         {% if form.errors %}
-            <div class="alert error">
-                {% for field in form %}
-                    {% for error in field.errors %}
-                        <p>{{ error }}</p>
-                    {% endfor %}
+
+        <div class="alert error">
+
+            {% for field in form %}
+                {% for error in field.errors %}
+                    <p>{{ error }}</p>
                 {% endfor %}
-            </div>
+            {% endfor %}
+
+            {% for error in form.non_field_errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+
+        </div>
+
         {% endif %}
 
-        <label id="dropZone">
+        <div class="project-info">
 
-            <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+            <div class="form-group">
 
-            <h3>Drag & Drop File Here</h3>
+                <label>Project Name</label>
 
-            <p>or click to browse</p>
+                {{ form.project_name }}
 
-            {{ form.file }}
+            </div>
 
-            <div id="fileName"></div>
+            <div class="form-group">
 
-        </label>
+                <label>Description (Optional)</label>
 
-        <button type="submit" class="primary-btn">
+                {{ form.description }}
 
-            <i class="fa-solid fa-upload"></i>
+            </div>
 
-            Analyze Code
+        </div>
+
+        <div class="upload-container">
+
+            <!-- ZIP -->
+
+            <label class="upload-box" for="id_zip_file">
+
+                <input
+                    id="id_zip_file"
+                    type="file"
+                    name="zip_file"
+                    accept=".zip"
+                    hidden>
+
+                <i class="fa-solid fa-file-zipper upload-big-icon"></i>
+
+                <h2>ZIP Project</h2>
+
+                <p>
+
+                    Upload your complete Python project
+
+                </p>
+
+                <span class="file-name" id="zipName">
+
+                    Click to select ZIP
+
+                </span>
+
+            </label>
+
+            <div class="upload-or">
+
+                OR
+
+            </div>
+
+            <!-- Python -->
+
+            <label class="upload-box" for="id_files">
+
+                <input
+                    id="id_files"
+                    type="file"
+                    name="files"
+                    accept=".py"
+                    multiple
+                    hidden>
+
+                <i class="fa-solid fa-file-code upload-big-icon"></i>
+
+                <h2>Python Files</h2>
+
+                <p>
+
+                    Upload one or more Python files
+
+                </p>
+
+                <span class="file-name" id="pythonNames">
+
+                    No files selected
+
+                </span>
+
+            </label>
+
+        </div>
+
+        <br>
+
+        <button
+            class="primary-btn"
+            type="submit">
+
+            <i class="fa-solid fa-magnifying-glass"></i>
+
+            Analyze Project
 
         </button>
 
@@ -58,64 +154,65 @@
 
 <script>
 
-document.addEventListener("DOMContentLoaded", function () {
+const zipInput=document.getElementById("id_zip_file");
+const pythonInput=document.getElementById("id_files");
 
-    const dropZone = document.getElementById("dropZone");
+zipInput.addEventListener("change",function(){
 
-    const fileInput = document.querySelector('input[type="file"]');
+    if(this.files.length){
 
-    const fileName = document.getElementById("fileName");
+        document.getElementById("zipName").innerHTML=
+        "📦 "+this.files[0].name;
 
-    if (!dropZone || !fileInput) return;
+    }
 
-    
+});
 
-    fileInput.addEventListener("change", function () {
+pythonInput.addEventListener("change",function(){
 
-        if (fileInput.files.length > 0) {
+    if(this.files.length==0){
 
-            fileName.innerHTML =
-                '<i class="fa-solid fa-file-code"></i> ' +
-                fileInput.files[0].name;
+        document.getElementById("pythonNames").innerHTML=
+        "No files selected";
 
-        }
+        return;
 
-    });
+    }
 
-    dropZone.addEventListener("dragover", function (e) {
+    if(this.files.length==1){
+
+        document.getElementById("pythonNames").innerHTML=
+        "🐍 "+this.files[0].name;
+
+    }
+
+    else{
+
+        document.getElementById("pythonNames").innerHTML=
+        "🐍 "+this.files.length+" Python files selected";
+
+    }
+
+});
+
+document.getElementById("uploadForm").addEventListener("submit",function(e){
+
+    if(
+
+        zipInput.files.length==0 &&
+
+        pythonInput.files.length==0
+
+    ){
+
+        alert("Please upload a ZIP project or Python file(s).");
 
         e.preventDefault();
 
-        dropZone.classList.add("dragover");
-
-    });
-
-    dropZone.addEventListener("dragleave", function () {
-
-        dropZone.classList.remove("dragover");
-
-    });
-
-    dropZone.addEventListener("drop", function (e) {
-
-        e.preventDefault();
-
-        dropZone.classList.remove("dragover");
-
-        fileInput.files = e.dataTransfer.files;
-
-        if (e.dataTransfer.files.length > 0) {
-
-            fileName.innerHTML =
-                '<i class="fa-solid fa-file-code"></i> ' +
-                e.dataTransfer.files[0].name;
-
-        }
-
-    });
+    }
 
 });
 
 </script>
 
-{% endblock %}  
+{% endblock %}
